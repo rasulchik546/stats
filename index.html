@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Трекер — K/A/D/W/L/ROUNDS — Simple GitHub sync</title>
+<title>Статистический трекер — K/A/D/W/L/ROUNDS — Enhanced + Ranks</title>
 <style>
   :root{
     --bg:#0b0b0b; --panel:#0f1113; --text:#e9eef8; --muted:#9aa3b2; --accent:#6ee7b7; --glass: rgba(255,255,255,0.03);
@@ -11,21 +11,29 @@
     --radius:12px;
   }
   [data-theme="light"]{ --bg:#f6f8fa; --panel:#ffffff; --text:#0b1220; --muted:#556270; --accent:#0f766e; --glass: rgba(10,10,10,0.03); }
-  *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+  *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial}
   html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#07080a);color:var(--text);-webkit-font-smoothing:antialiased}
   .wrap{max-width:1200px;margin:18px auto;padding:16px;display:grid;grid-template-columns:320px 1fr 320px;gap:14px}
   header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
   h1{font-size:18px;margin:0;color:var(--accent)}
   .card{background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:14px;border-radius:var(--radius);box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.03)}
-  .small{font-size:13px;color:var(--muted)}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
   input[type="text"],input[type="number"],select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);font-size:14px}
-  button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);cursor:pointer}
   .players{display:flex;flex-direction:column;gap:8px;max-height:64vh;overflow:auto;margin-top:10px}
   .player-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px}
   .player-row:hover{background:var(--glass)}
   .player-row.selected{outline:2px solid rgba(255,255,255,0.04);background:linear-gradient(90deg, rgba(255,255,255,0.02), transparent)}
   .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+  .stat{background:rgba(255,255,255,0.01);padding:12px;border-radius:10px;text-align:center}
   .ops{display:flex;gap:6px;justify-content:center;margin-top:8px}
+  .hotbar{display:flex;justify-content:space-between;align-items:center;padding:10px;margin-top:10px;border-radius:8px;background:rgba(255,255,255,0.01)}
+  button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);cursor:pointer}
+  .small{font-size:13px;color:var(--muted)}
+  footer{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:10px;font-size:13px}
+  .controls{display:flex;gap:8px;align-items:center}
+  .search{display:flex;gap:8px;margin-top:10px}
+  .flex{display:flex;gap:8px}
+  .leader{display:flex;flex-direction:column;gap:8px;margin-top:10px}
   canvas.spark{width:100%;height:40px;border-radius:6px;display:block}
   .muted-pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px;color:var(--muted)}
   .badge{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:12px}
@@ -35,7 +43,6 @@
   .rank-diamond{background:linear-gradient(90deg,#b7e0ff,#8fcfff);color:#011}
   .rank-emerald{background:linear-gradient(90deg,#7bf0b3,#4edc93);color:#012}
   .rank-global{background:linear-gradient(90deg,#ffd3ff,#ffb7f0);color:#111}
-  .admin-ui{display:flex;gap:8px;align-items:center}
   @media (max-width:1100px){.wrap{grid-template-columns:1fr 360px;max-width:980px} aside:last-child{order:3} }
   @media (max-width:800px){.wrap{grid-template-columns:1fr;padding:12px} header{flex-direction:column;align-items:flex-start;gap:8px} .players{max-height:36vh} .stat-grid{grid-template-columns:repeat(2,1fr)} }
 </style>
@@ -45,17 +52,16 @@
     <header>
       <div>
         <h1>Трекер игроков — K/A/D / MATCH W/L / ROUNDS</h1>
-        <div class="small">Локально → localStorage • Ранги и номинации</div>
+        <div class="small">Локально → localStorage • Ранги и номинации добавлены</div>
       </div>
-      <div class="admin-ui">
-        <div id="adminBadge" class="small" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
-        <button id="adminLoginBtn">Войти как админ</button>
-        <button id="adminLogoutBtn" style="display:none">Выйти</button>
-        <button id="cfgGhBtn" title="Указать raw.githubusercontent URL">Настроить GitHub URL</button>
-        <button id="pullGhBtn" title="Загрузить JSON с GitHub (raw) — чтение только">Загрузить из GitHub</button>
-        <button id="copyJsonBtn" title="Копировать текущие данные в буфер обмена">Копировать JSON</button>
-        <button id="downloadJsonBtn" title="Скачать players_export.json">Скачать JSON</button>
-        <div id="ghLabel" class="small" style="margin-left:8px;color:var(--muted)">GH: not set</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="controls">
+          <button id="themeToggle">Тема</button>
+          <button id="exportBtn">Экспорт</button>
+          <button id="importBtn">Импорт</button>
+          <!-- Новая кнопка Сохранить (только для админа) -->
+          <button id="saveBtn" title="Сохранение (только для админа)">Сохранить</button>
+        </div>
       </div>
     </header>
 
@@ -286,26 +292,35 @@
       </div>
     </aside>
 
-    <footer>Готово: ранги и номинации сохранены. Для GitHub: используй «Загрузить из GitHub» (raw) или скачай JSON и загрузите вручную.</footer>
+    <footer>Готово: добавлены номинации и ранги. Ранги считают общий статистический профиль — не только победы.</footer>
   </div>
 
 <script>
-/* ========== CORE (как было) ========== */
+/* ========== Настройки хранения ========== */
 const STORE = 'player_stats_v3';
 const STORE_WEIGHTS = 'player_weights_v3';
+
+/* Структура игрока:
+{ id, name, kills, assists, deaths, rounds, wins, loses, createdAt, matches: [ {k,a,d,r,win,timestamp} ] }
+WINS / LOSES = матчи (match wins / match loses)
+*/
 
 let players = [];
 let selectedId = null;
 let weights = { kd:30, kad:25, avg:20, svr:10, win:15 };
 let uiState = { theme: (document.body.getAttribute('data-theme')||'dark') };
 
+/* ---------- Утилиты ---------- */
 const $ = id => document.getElementById(id);
 function uid(){ return 'p_' + Math.random().toString(36).slice(2,9); }
+
+/* helper: check admin by localStorage key used in admin panel */
+function isAdmin(){ return localStorage.getItem('is_admin_v3') === '1'; }
 
 function save(){ localStorage.setItem(STORE, JSON.stringify(players)); localStorage.setItem(STORE_WEIGHTS, JSON.stringify(weights)); localStorage.setItem('ui_state', JSON.stringify(uiState)); renderList(); renderSelected(); renderNominations(); }
 function load(){ try{ const r = localStorage.getItem(STORE); const w = localStorage.getItem(STORE_WEIGHTS); const u = localStorage.getItem('ui_state'); players = r ? JSON.parse(r) : []; weights = w ? JSON.parse(w) : weights; if(u){ uiState = JSON.parse(u); document.body.setAttribute('data-theme', uiState.theme); } }catch(e){ console.error(e); players = []; } }
 
-/* formulas */
+/* ---------- Формулы (реализация точно как в описании) ---------- */
 function computeKD(p){
   const denom = p.deaths === 0 ? 1 : p.deaths;
   const value = denom === 0 ? 0 : p.kills / denom;
@@ -349,22 +364,28 @@ function computeRATING(p){
 
   const sumW = (weights.kd + weights.kad + weights.avg + weights.svr + weights.win) || 1;
   const score = (weights.kd*kd_norm + weights.kad*kad_norm + weights.avg*avg_norm + weights.svr*svr_norm + weights.win*win_norm) / sumW;
+
+  // Сохраняем поведение — finalRating = score * 2 (как в оригинале). Не ломаем логику.
   const finalRating = score * 2;
   return { display: finalRating.toFixed(2), value: finalRating };
 }
 
-/* ranks & noms */
+/* ---------- НОВОЕ: ранги и номинации ---------- */
+// computeRankScore: 0..100 based on normalized metrics (not wins/loses specifically unless winrate contributes)
 function computeRankScore(p){
   const kd_norm = Math.min(computeKD(p).value, 5) / 5;
   const kad_norm = Math.min(computeKAD(p).value, 7) / 7;
   const avg_norm = Math.min(computeAVG(p).value, 2) / 2;
   const svr_norm = Math.min(Math.max(computeSVR(p).value, 0), 100) / 100;
-  const sumW = (weights.kd + weights.kad + weights.avg + weights.svr) || 1;
+
+  const sumW = (weights.kd + weights.kad + weights.avg + weights.svr) || 1; // exclude win weight — ranks are mainly based on playstyle
   const score = (weights.kd*kd_norm + weights.kad*kad_norm + weights.avg*avg_norm + weights.svr*svr_norm) / sumW;
   return Math.round(score * 100);
 }
+
 function computeRank(p){
   const s = computeRankScore(p);
+  // Custom tiers suggested by you: Silver, Gold, Platinum, Diamond, Emerald, Global
   if(s >= 90) return { id: 'global', name: 'Global', cls: 'rank-global' };
   if(s >= 75) return { id: 'emerald', name: 'Emerald', cls: 'rank-emerald' };
   if(s >= 55) return { id: 'diamond', name: 'Diamond', cls: 'rank-diamond' };
@@ -372,21 +393,32 @@ function computeRank(p){
   if(s >= 20) return { id: 'gold', name: 'Gold', cls: 'rank-gold' };
   return { id: 'silver', name: 'Silver', cls: 'rank-silver' };
 }
+
+// Nominations: compute winners for several categories
 function computeNominations(players){
   const res = {};
   if(!players.length) return res;
+  // 1) Highest all-time kills
   let maxKills = -1, pidKills = null;
+  // 2) Best KD (by computeKD value)
   let bestKD = -1, pidKD = null;
+  // 3) Highest AVG (kills/rounds)
   let bestAVG = -1, pidAVG = null;
+  // 4) Highest single-match performance (kills in one match)
   let bestSingle = -1, pidSingle = null;
+  // 5) Most consistent (lowest stddev of kills per match, at least 3 matches)
   let bestCons = Infinity, pidCons = null;
+  // 6) Clutch King — matches where player had >= 10 kills and won
   let bestClutch = -1, pidClutch = null;
+
   players.forEach(p =>{
     if((p.kills||0) > maxKills){ maxKills = p.kills; pidKills = p.id; }
     const kd = computeKD(p).value; if(kd > bestKD){ bestKD = kd; pidKD = p.id; }
     const avg = computeAVG(p).value; if(avg > bestAVG){ bestAVG = avg; pidAVG = p.id; }
+
     const matches = p.matches || [];
     matches.forEach(m=>{ if(m.k > bestSingle){ bestSingle = m.k; pidSingle = p.id; } });
+
     if(matches.length >= 3){
       const arr = matches.map(m=>m.k);
       const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
@@ -394,9 +426,11 @@ function computeNominations(players){
       const std = Math.sqrt(variance);
       if(std < bestCons){ bestCons = std; pidCons = p.id; }
     }
+
     const clutchCount = (matches||[]).filter(m=>m.k >= 10 && m.win).length;
     if(clutchCount > bestClutch){ bestClutch = clutchCount; pidClutch = p.id; }
   });
+
   res['Top Kills (all-time)'] = pidKills;
   res['Best KD (all-time)'] = pidKD;
   res['Best AVG (kills/round)'] = pidAVG;
@@ -406,7 +440,7 @@ function computeNominations(players){
   return res;
 }
 
-/* rendering */
+/* ---------- Рендер списка + топ + номинации ---------- */
 const playersList = $('playersList');
 const countEl = $('count');
 
@@ -471,9 +505,10 @@ function renderNominations(){
   }
 }
 
-/* select & display */
+/* ---------- Выбор и отображение выбранного ---------- */
 function selectPlayer(id){ selectedId = id; renderList(); renderSelected(); }
 function find(id){ return players.find(x=>x.id===id); }
+
 function renderSelected(){
   const nameEl = $('selName'), infoEl = $('selInfo');
   if(!selectedId){ nameEl.textContent = 'Нет выбранного игрока'; infoEl.textContent = 'Выбери слева'; updateStatFieldsEmpty(); return; }
@@ -500,6 +535,7 @@ function renderSelected(){
   $('vWINRATE').textContent = computeWINRATE(p).display;
   $('vRATING').textContent = computeRATING(p).display;
 
+  // history
   const matches = p.matches || [];
   $('matchCount').textContent = 'Матчей: ' + matches.length;
   if(matches.length){
@@ -511,9 +547,8 @@ function renderSelected(){
 }
 function updateStatFieldsEmpty(){ ['vKills','vAssists','vDeaths','vRounds','vWins','vLoses','vKD','vKAD','vAVG','vSVR','vWINRATE','vRATING'].forEach(id=>$(id).textContent='—'); $('selRank').style.display='none'; }
 
-/* create/change */
+/* ---------- Создание / изменение ---------- */
 $('addBtn').onclick = ()=>{
-  if(!isAdmin()){ return alert('Только админ может добавлять — нажмите "Войти как админ"'); }
   const name = $('name').value.trim();
   if(!name) return alert('Введите имя');
   const p = {
@@ -531,23 +566,29 @@ $('addBtn').onclick = ()=>{
   players.unshift(p);
   selectedId = p.id;
   save();
-  // reset
-  $('name').value=''; $('kills').value=0; $('assists').value=0; $('deaths').value=0; $('rounds').value=0; $('wins').value=0; $('loses').value=0;
+  // Сброс формы
+  $('name').value = '';
+  $('kills').value = 0;
+  $('assists').value = 0;
+  $('deaths').value = 0;
+  $('rounds').value = 0;
+  $('wins').value = 0;
+  $('loses').value = 0;
 };
-$('addZeroBtn').onclick = ()=>{ if(!isAdmin()){ return alert('Только админ может добавлять'); } const name = $('name').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt:Date.now() }; players.unshift(p); selectedId=p.id; save(); $('name').value=''; };
+$('addZeroBtn').onclick = ()=>{ const name = $('name').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt:Date.now() }; players.unshift(p); selectedId=p.id; save(); $('name').value=''; };
 
-/* list delegation */
+/* Делегирование кликов по списку */
 playersList.addEventListener('click', e=>{
   const btn = e.target.closest('button'); if(!btn) return;
   const id = btn.dataset.id; const act = btn.dataset.act;
   if(act === 'open') selectPlayer(id);
-  if(act === 'dup'){ if(!isAdmin()){ return alert('Только админ может дублировать'); } const p = find(id); if(!p) return; const copy = Object.assign({}, p, { id: uid(), name: p.name + '_copy', createdAt: Date.now() }); players.unshift(copy); save(); }
+  if(act === 'dup'){ const p = find(id); if(!p) return; const copy = Object.assign({}, p, { id: uid(), name: p.name + '_copy', createdAt: Date.now() }); players.unshift(copy); save(); }
 });
 
-/* +/- and editing */
+/* ---------- + / - и прямое редактирование ---------- */
 document.querySelectorAll('[data-op]').forEach(b=> b.addEventListener('click', ()=> applyOp(b.getAttribute('data-op')) ) );
+
 function applyOp(op){
-  if(!isAdmin()){ return alert('Только админ может менять значения'); }
   if(!selectedId){ alert('Выбери игрока'); return; }
   const p = find(selectedId); if(!p) return;
   switch(op){
@@ -567,11 +608,10 @@ function applyOp(op){
   save();
 }
 
-/* direct edit */
+/* Прямое редактирование через prompt */
 ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
   const el = $(id); if(!el) return;
   el.onclick = ()=>{
-    if(!isAdmin()){ return alert('Только админ может редактировать'); }
     if(!selectedId){ alert('Выбери игрока'); return; }
     const p = find(selectedId); if(!p) return;
     const map = { editKills:'kills', editAssists:'assists', editDeaths:'deaths', editRounds:'rounds', editWins:'wins', editLoses:'loses' };
@@ -583,9 +623,8 @@ function applyOp(op){
   };
 });
 
-/* delete / reset */
+/* ---------- Удаление / сброс ---------- */
 $('deletePlayer').onclick = ()=>{
-  if(!isAdmin()){ return alert('Только админ может удалять'); }
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Удалить игрока?')) return;
   players = players.filter(x=>x.id !== selectedId);
@@ -593,7 +632,6 @@ $('deletePlayer').onclick = ()=>{
   save();
 };
 $('resetPlayer').onclick = ()=>{
-  if(!isAdmin()){ return alert('Только админ может сбрасывать'); }
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Сбросить все счётчики у игрока?')) return;
   const p = find(selectedId); if(!p) return;
@@ -602,12 +640,11 @@ $('resetPlayer').onclick = ()=>{
   save();
 };
 
-/* weights */
+/* ---------- Веса (слайдеры) ---------- */
 ['wKD','wKAD','wAVG','wSVR','wWIN'].forEach(id=>{
   const el = $(id);
   if(!el) return;
   el.oninput = ()=>{
-    if(!isAdmin()){ return; } // only admin can change weights
     weights.kd = Number($('wKD').value);
     weights.kad = Number($('wKAD').value);
     weights.avg = Number($('wAVG').value);
@@ -616,10 +653,9 @@ $('resetPlayer').onclick = ()=>{
     save();
   };
 });
-$('resetWeights').onclick = ()=>{ if(!isAdmin()){ return alert('Только админ может сбросить веса'); } weights = { kd:30, kad:25, avg:20, svr:10, win:15 }; $('wKD').value=30; $('wKAD').value=25; $('wAVG').value=20; $('wSVR').value=10; $('wWIN').value=15; save(); };
+$('resetWeights').onclick = ()=>{ weights = { kd:30, kad:25, avg:20, svr:10, win:15 }; $('wKD').value=30; $('wKAD').value=25; $('wAVG').value=20; $('wSVR').value=10; $('wWIN').value=15; save(); };
 
-/* export/import/clear */
-$('exportAll').onclick = $('exportBtn').onclick;
+/* ---------- Экспорт / импорт / очистка ---------- */
 $('exportBtn').onclick = ()=>{
   const data = { players, weights };
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
@@ -627,25 +663,24 @@ $('exportBtn').onclick = ()=>{
   const a = document.createElement('a'); a.href = url; a.download = 'players_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
 $('importBtn').onclick = ()=> $('importAll').click();
+$('exportAll').onclick = $('exportBtn').onclick;
 $('importAll').onclick = ()=>{
-  if(!isAdmin()){ return alert('Только админ может импортировать'); }
   const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
   inp.onchange = async ()=>{ const f = inp.files[0]; if(!f) return; try{ const txt = await f.text(); const data = JSON.parse(txt); if(Array.isArray(data.players)) players = data.players; if(data.weights) weights = data.weights; selectedId = players.length ? players[0].id : null; save(); alert('Импорт завершён'); }catch(e){ alert('Ошибка импорта'); console.error(e); } };
   inp.click();
 };
 $('clearAll').onclick = ()=>{
-  if(!isAdmin()){ return alert('Только админ может очищать'); }
   if(!confirm('Уничтожить все данные (лок locally)?')) return;
   players = []; selectedId = null; weights = { kd:30,kad:25,avg:20,svr:10,win:15 }; localStorage.removeItem(STORE); localStorage.removeItem(STORE_WEIGHTS); save();
 };
 
-/* theme */
+/* ---------- Тема ---------- */
 $('themeToggle').onclick = ()=>{ const cur = document.body.getAttribute('data-theme') || 'dark'; const next = cur === 'dark' ? 'light' : 'dark'; document.body.setAttribute('data-theme', next); uiState.theme = next; save(); };
 
-/* add match */
+/* ---------- Добавление матча (интеллект) ---------- */
 $('addMatchBtn').onclick = ()=>{
-  if(!isAdmin()){ return alert('Только админ может добавлять матчи'); }
   if(!selectedId) return alert('Выбери игрока');
+  // modal-lite: single custom form using prompt group for simplicity (non-blocking enhancement can be added)
   const k = parseInt(prompt('KILLS в матче', '0')) || 0;
   const a = parseInt(prompt('ASSISTS в матче', '0')) || 0;
   const d = parseInt(prompt('DEATHS в матче', '0')) || 0;
@@ -659,7 +694,7 @@ $('addMatchBtn').onclick = ()=>{
   save();
 };
 
-$('clearHistory').onclick = ()=>{ if(!isAdmin()){ return alert('Только админ может очищать историю'); } if(!selectedId) return alert('Выбери игрока'); if(!confirm('Очистить историю матчей?')) return; const p=find(selectedId); if(!p) return; p.matches=[]; save(); };
+$('clearHistory').onclick = ()=>{ if(!selectedId) return alert('Выбери игрока'); if(!confirm('Очистить историю матчей?')) return; const p=find(selectedId); if(!p) return; p.matches=[]; save(); };
 
 function renderHistory(p){
   const list = $('historyList'); list.innerHTML='';
@@ -669,6 +704,7 @@ function renderHistory(p){
     el.innerHTML = `<div>K:${m.k} A:${m.a} D:${m.d} R:${m.r}</div><div>${m.win? 'W':'L'} • ${new Date(m.timestamp).toLocaleString()}</div>`;
     list.appendChild(el);
   });
+  // draw sparkline for kills
   drawSpark(p.matches||[]);
 }
 
@@ -693,126 +729,158 @@ function drawSpark(matches){
   ctx.stroke();
 }
 
+/* ---------- Малые утилиты ---------- */
 function escapeHtml(s){ return String(s).replace(/[&<>"]+/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]||m)); }
 
+/* ---------- События поиска/сортировки ---------- */
 $('searchInput').oninput = renderList; $('sortSelect').onchange = renderList;
 
-/* init */
+/* ---------- Инициализация ---------- */
 load();
 if(players.length && !selectedId) selectedId = players[0].id;
 renderList();
 renderSelected();
+
+// keep canvas responsive on resize
 window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId); if(p && p.matches && p.matches.length) drawSpark(p.matches); } });
 
-/* ========== SIMPLE ADMIN (password only) ========== */
-const LOCAL_ADMIN_KEY = 'tracker_local_admin_v1';
-function isAdmin(){ return localStorage.getItem(LOCAL_ADMIN_KEY) === '1'; }
-function setAdmin(on){
-  localStorage.setItem(LOCAL_ADMIN_KEY, on ? '1' : '0');
-  updateAdminUI();
-}
-function updateAdminUI(){
-  const admin = isAdmin();
-  $('adminBadge').style.display = admin ? 'inline-block' : 'none';
-  $('adminLoginBtn').style.display = admin ? 'none' : 'inline-block';
-  $('adminLogoutBtn').style.display = admin ? 'inline-block' : 'none';
-  // enable/disable admin-only buttons
-  const adminOnly = ['addBtn','addZeroBtn','clearForm','deletePlayer','resetPlayer','addMatchBtn','clearHistory','importAll','clearAll','wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll'];
-  adminOnly.forEach(id=>{
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.disabled = !admin;
-    if(el.disabled) el.title = 'Требуется админ (войти через пароль)';
-    else el.title = '';
-  });
-  // +/- buttons and edit buttons
-  document.querySelectorAll('[data-op]').forEach(b=> b.disabled = !admin);
-  ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.disabled = !admin;
-  });
-}
-document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
-  const pw = prompt('Введите пароль администратора:', '');
-  if(pw === null) return;
-  if(pw === '5ugaradmin'){
-    setAdmin(true);
-    alert('Админ включён');
-  } else {
-    alert('Неверный пароль');
+/* ========== НОВЫЙ: Сохранение (Save) — только для админа ========= */
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  if(!isAdmin()){
+    return alert('Сохранение доступно только при админ-статусе. Нажми "Войти как админ".');
   }
-});
-document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
-  setAdmin(false);
-  alert('Админ выключен');
-});
-updateAdminUI();
-
-/* ========== SIMPLE GitHub RAW URL flow (read-only from raw, write via download/copy) ========== */
-const GH_CFG_KEY = 'tracker_gh_raw_v1';
-function setGhRaw(url){
-  if(!url) { localStorage.removeItem(GH_CFG_KEY); $('ghLabel').textContent = 'GH: not set'; return; }
-  localStorage.setItem(GH_CFG_KEY, url);
-  $('ghLabel').textContent = 'GH: ' + url;
-}
-function getGhRaw(){ return localStorage.getItem(GH_CFG_KEY); }
-
-document.getElementById('cfgGhBtn').addEventListener('click', ()=>{
-  const cur = getGhRaw() || '';
-  const v = prompt('Вставь raw.githubusercontent.com URL к файлу с JSON (пример: https://raw.githubusercontent.com/owner/repo/branch/path/players.json)', cur);
-  if(v === null) return;
-  if(!v.trim()){ setGhRaw(null); alert('GitHub URL очищен'); return; }
-  setGhRaw(v.trim());
-  alert('GitHub raw URL сохранён.');
-});
-
-document.getElementById('pullGhBtn').addEventListener('click', async ()=>{
-  const url = getGhRaw();
-  if(!url) return alert('Сначала укажи GitHub raw URL (нажми "Настроить GitHub URL")');
-  try{
-    const r = await fetch(url, { cache: 'no-store' });
-    if(!r.ok) return alert('Не удалось загрузить файл с GitHub (status ' + r.status + ')');
-    const txt = await r.text();
-    const data = JSON.parse(txt);
-    if(!Array.isArray(data)) {
-      // Some exports store object {players, weights} — handle both
-      if(data.players && Array.isArray(data.players)){ players = data.players; if(data.weights) weights = data.weights; }
-      else return alert('Формат файла на GitHub не похож на ожидаемый массив игроков или объект {players,weights}');
-    } else {
-      players = data;
-    }
-    selectedId = players.length ? players[0].id : null;
-    save();
-    alert('Данные загружены из GitHub (raw).');
-  }catch(e){
-    console.error(e);
-    alert('Ошибка при загрузке/парсинге JSON: ' + e.message);
-  }
-});
-
-/* copy JSON to clipboard */
-document.getElementById('copyJsonBtn').addEventListener('click', async ()=>{
   const payload = { players, weights };
+
+  // 1) скачать файл
   try{
-    await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-    alert('JSON скопирован в буфер обмена. Вставь в GitHub web editor.');
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'players_export.json'; document.body.appendChild(a);
+    a.click(); a.remove(); URL.revokeObjectURL(url);
   }catch(e){
-    // fallback: open a prompt with text to copy
-    prompt('Скопируй JSON вручную (Ctrl+C):', JSON.stringify(payload, null, 2));
+    console.error('Download failed', e);
+  }
+
+  // 2) попробовать скопировать JSON в буфер (удобно для вставки в GitHub web editor)
+  try{
+    await navigator.clipboard.writeText(JSON.stringify(payload,null,2));
+    alert('Данные сохранены: файл скачан и JSON скопирован в буфер обмена.\n\nЧтобы обновить сайт: открой свой репозиторий на GitHub и через web-редактор замени старый JSON файлом (или вставь содержимое из буфера).');
+  }catch(e){
+    // fallback: show prompt with text to copy manually
+    prompt('JSON (скопируй вручную Ctrl+C):', JSON.stringify(payload,null,2));
+    alert('Файл скачан. JSON показан в окне для ручного копирования (из-за ограничений буфера).');
   }
 });
-
-/* download JSON file */
-document.getElementById('downloadJsonBtn').addEventListener('click', ()=>{
-  const data = { players, weights };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'players_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-});
-
-/* small UX: disable admin-only controls initially via updateAdminUI already called */
-
-/* done */
 </script>
+
+<!-- === admin panel (вставлен последним, перед </body>) === -->
+<script>
+(function(){
+  const ADMIN_KEY = 'is_admin_v3';
+  const PASSWORD = '5ugaradmin'; // пароль для включения админ-статуса
+
+  function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
+  function setAdmin(on){
+    localStorage.setItem(ADMIN_KEY, on ? '1' : '0');
+    updateAdminUI();
+  }
+
+  function createAdminPanel(){
+    const header = document.querySelector('header');
+    if(!header) return;
+    const wrapper = document.createElement('div');
+    wrapper.id = 'adminPanelWrapper';
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '8px';
+    wrapper.style.marginLeft = '12px';
+    wrapper.innerHTML = `
+      <div id="adminControls" style="display:flex;gap:8px;align-items:center">
+        <div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
+        <button id="adminLoginBtn">Войти как админ</button>
+        <button id="adminLogoutBtn" style="display:none">Выйти</button>
+      </div>
+    `;
+    const target = header.querySelector('.controls') || header;
+    target.appendChild(wrapper);
+
+    document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
+      const pw = prompt('Введите пароль администратора');
+      if(pw === null) return;
+      if(pw === PASSWORD){ setAdmin(true); alert('Админ включён'); }
+      else alert('Неверный пароль');
+    });
+    document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{ setAdmin(false); alert('Админ выключен'); });
+  }
+
+  function updateAdminUI(){
+    const admin = isAdmin();
+    const badge = document.getElementById('adminBadge');
+    const loginBtn = document.getElementById('adminLoginBtn');
+    const logoutBtn = document.getElementById('adminLogoutBtn');
+    if(badge) badge.style.display = admin ? 'inline-block' : 'none';
+    if(loginBtn) loginBtn.style.display = admin ? 'none' : 'inline-block';
+    if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none';
+
+    // ID элементов, которыми нельзя управлять без админа
+    const protectedIds = [
+      'addBtn','addZeroBtn','clearForm',
+      'deletePlayer','resetPlayer',
+      'addMatchBtn','clearHistory',
+      'importAll','importBtn','clearAll','importBtn',
+      'wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll','importAll',
+      'saveBtn' // новая кнопка Save — только для админа
+    ];
+    protectedIds.forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.disabled = !admin;
+    });
+
+    // заблокировать + / - кнопки и "Изм." кнопки
+    document.querySelectorAll('[data-op]').forEach(b=> b.disabled = !admin);
+    ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.disabled = !admin;
+    });
+
+    // дублирование записей в списке (кнопки с data-act="dup")
+    document.querySelectorAll('#playersList button[data-act="dup"]').forEach(b=> b.disabled = !admin);
+
+    // слайдеры (weights)
+    ['wKD','wKAD','wAVG','wSVR','wWIN'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.disabled = !admin;
+    });
+
+    // подсказка на заблокированных элементах
+    document.querySelectorAll('button, input[type="range"]').forEach(el=>{
+      if(el.disabled) el.title = 'Требуется админ статус';
+      else if(el.title === 'Требуется админ статус') el.title = '';
+    });
+  }
+
+  // дополнительная страховка: блокируем клик по disabled-кнопкам (если кто-то по JS снимает disabled)
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    if(btn.disabled){
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      if(!isAdmin()) {
+        console.warn('Действие заблокировано — требуется админ статус');
+      }
+    }
+  }, true);
+
+  // Инициализация
+  createAdminPanel();
+  updateAdminUI();
+
+  // экспонируем в консоль для отладки: window.__setAdmin(true/false)
+  window.__setAdmin = setAdmin;
+})();
+</script>
+<!-- === /admin panel === -->
+
 </body>
 </html>
