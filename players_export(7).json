@@ -1,0 +1,110 @@
+{
+  "players": [
+    {
+      "id": "p_7f783py",
+      "name": "iKaro",
+      "kills": 11,
+      "assists": 3,
+      "deaths": 19,
+      "rounds": 19,
+      "wins": 1,
+      "loses": 0,
+      "createdAt": 1770892364630
+    },
+    {
+      "id": "p_q9cqfoo",
+      "name": "Adikh",
+      "kills": 51,
+      "assists": 6,
+      "deaths": 34,
+      "rounds": 55,
+      "wins": 2,
+      "loses": 0,
+      "createdAt": 1770803254119
+    },
+    {
+      "id": "p_30fkouh",
+      "name": "ryuzaki",
+      "kills": 16,
+      "assists": 6,
+      "deaths": 24,
+      "rounds": 17,
+      "wins": 1,
+      "loses": 0,
+      "createdAt": 1770803139024
+    },
+    {
+      "id": "p_l7op1wh",
+      "name": "Ki2",
+      "kills": 56,
+      "assists": 6,
+      "deaths": 44,
+      "rounds": 51,
+      "wins": 2,
+      "loses": 1,
+      "createdAt": 1770803012063
+    },
+    {
+      "id": "p_qzw2sen",
+      "name": "ku314don",
+      "kills": 92,
+      "assists": 23,
+      "deaths": 77,
+      "rounds": 110,
+      "wins": 4,
+      "loses": 2,
+      "createdAt": 1770788747002
+    },
+    {
+      "id": "p_nbro2j9",
+      "name": "sanzh1kk",
+      "kills": 85,
+      "assists": 14,
+      "deaths": 73,
+      "rounds": 126,
+      "wins": 3,
+      "loses": 2,
+      "createdAt": 1770788307394
+    },
+    {
+      "id": "p_ndn076d",
+      "name": "ky7raxe",
+      "kills": 33,
+      "assists": 7,
+      "deaths": 39,
+      "rounds": 68,
+      "wins": 3,
+      "loses": 1,
+      "createdAt": 1770787914851
+    },
+    {
+      "id": "p_h60b91n",
+      "name": "kindz1r",
+      "kills": 85,
+      "assists": 15,
+      "deaths": 53,
+      "rounds": 129,
+      "wins": 3,
+      "loses": 2,
+      "createdAt": 1770787639652
+    },
+    {
+      "id": "p_28v4xoa",
+      "name": "5ugar",
+      "kills": 63,
+      "assists": 15,
+      "deaths": 86,
+      "rounds": 121,
+      "wins": 5,
+      "loses": 1,
+      "createdAt": 1770785569998
+    }
+  ],
+  "weights": {
+    "kd": 30,
+    "kad": 25,
+    "avg": 20,
+    "svr": 10,
+    "win": 100
+  }
+}
