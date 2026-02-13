@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Статистический трекер — K/A/D/W/L/ROUNDS — Enhanced + Ranks — GitHub sync</title>
+<title>Трекер — K/A/D/W/L/ROUNDS — Simple GitHub sync</title>
 <style>
   :root{
     --bg:#0b0b0b; --panel:#0f1113; --text:#e9eef8; --muted:#9aa3b2; --accent:#6ee7b7; --glass: rgba(255,255,255,0.03);
@@ -11,29 +11,21 @@
     --radius:12px;
   }
   [data-theme="light"]{ --bg:#f6f8fa; --panel:#ffffff; --text:#0b1220; --muted:#556270; --accent:#0f766e; --glass: rgba(10,10,10,0.03); }
-  *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+  *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial}
   html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#07080a);color:var(--text);-webkit-font-smoothing:antialiased}
   .wrap{max-width:1200px;margin:18px auto;padding:16px;display:grid;grid-template-columns:320px 1fr 320px;gap:14px}
   header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
   h1{font-size:18px;margin:0;color:var(--accent)}
   .card{background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:14px;border-radius:var(--radius);box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.03)}
-  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+  .small{font-size:13px;color:var(--muted)}
   input[type="text"],input[type="number"],select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);font-size:14px}
+  button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);cursor:pointer}
   .players{display:flex;flex-direction:column;gap:8px;max-height:64vh;overflow:auto;margin-top:10px}
   .player-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px}
   .player-row:hover{background:var(--glass)}
   .player-row.selected{outline:2px solid rgba(255,255,255,0.04);background:linear-gradient(90deg, rgba(255,255,255,0.02), transparent)}
   .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
-  .stat{background:rgba(255,255,255,0.01);padding:12px;border-radius:10px;text-align:center}
   .ops{display:flex;gap:6px;justify-content:center;margin-top:8px}
-  .hotbar{display:flex;justify-content:space-between;align-items:center;padding:10px;margin-top:10px;border-radius:8px;background:rgba(255,255,255,0.01)}
-  button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);cursor:pointer}
-  .small{font-size:13px;color:var(--muted)}
-  footer{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:10px;font-size:13px}
-  .controls{display:flex;gap:8px;align-items:center}
-  .search{display:flex;gap:8px;margin-top:10px}
-  .flex{display:flex;gap:8px}
-  .leader{display:flex;flex-direction:column;gap:8px;margin-top:10px}
   canvas.spark{width:100%;height:40px;border-radius:6px;display:block}
   .muted-pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px;color:var(--muted)}
   .badge{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:12px}
@@ -43,7 +35,7 @@
   .rank-diamond{background:linear-gradient(90deg,#b7e0ff,#8fcfff);color:#011}
   .rank-emerald{background:linear-gradient(90deg,#7bf0b3,#4edc93);color:#012}
   .rank-global{background:linear-gradient(90deg,#ffd3ff,#ffb7f0);color:#111}
-  .sync-status{font-size:12px;color:var(--muted);margin-left:8px}
+  .admin-ui{display:flex;gap:8px;align-items:center}
   @media (max-width:1100px){.wrap{grid-template-columns:1fr 360px;max-width:980px} aside:last-child{order:3} }
   @media (max-width:800px){.wrap{grid-template-columns:1fr;padding:12px} header{flex-direction:column;align-items:flex-start;gap:8px} .players{max-height:36vh} .stat-grid{grid-template-columns:repeat(2,1fr)} }
 </style>
@@ -51,25 +43,19 @@
 <body data-theme="dark">
   <div class="wrap">
     <header>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div>
-          <h1>Трекер игроков — K/A/D / MATCH W/L / ROUNDS</h1>
-          <div class="small">Локально → localStorage • Ранги и номинации</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <div class="small">GitHub sync: 
-            <span id="ghConfigLabel" class="small" style="margin-left:6px;color:var(--muted)">not configured</span>
-            <span id="syncState" class="sync-status"></span>
-          </div>
-        </div>
+      <div>
+        <h1>Трекер игроков — K/A/D / MATCH W/L / ROUNDS</h1>
+        <div class="small">Локально → localStorage • Ранги и номинации</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div class="controls">
-          <button id="themeToggle">Тема</button>
-          <button id="exportBtn">Экспорт</button>
-          <button id="importBtn">Импорт</button>
-          <!-- admin login buttons will be injected by admin panel script -->
-        </div>
+      <div class="admin-ui">
+        <div id="adminBadge" class="small" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
+        <button id="adminLoginBtn">Войти как админ</button>
+        <button id="adminLogoutBtn" style="display:none">Выйти</button>
+        <button id="cfgGhBtn" title="Указать raw.githubusercontent URL">Настроить GitHub URL</button>
+        <button id="pullGhBtn" title="Загрузить JSON с GitHub (raw) — чтение только">Загрузить из GitHub</button>
+        <button id="copyJsonBtn" title="Копировать текущие данные в буфер обмена">Копировать JSON</button>
+        <button id="downloadJsonBtn" title="Скачать players_export.json">Скачать JSON</button>
+        <div id="ghLabel" class="small" style="margin-left:8px;color:var(--muted)">GH: not set</div>
       </div>
     </header>
 
@@ -300,15 +286,14 @@
       </div>
     </aside>
 
-    <footer>Готово: добавлены номинации и ранги. Ранги считают общий статистический профиль — не только победы.</footer>
+    <footer>Готово: ранги и номинации сохранены. Для GitHub: используй «Загрузить из GitHub» (raw) или скачай JSON и загрузите вручную.</footer>
   </div>
 
 <script>
-/* =========================
-   Core app (unchanged logic)
-   ========================= */
+/* ========== CORE (как было) ========== */
 const STORE = 'player_stats_v3';
 const STORE_WEIGHTS = 'player_weights_v3';
+
 let players = [];
 let selectedId = null;
 let weights = { kd:30, kad:25, avg:20, svr:10, win:15 };
@@ -317,10 +302,10 @@ let uiState = { theme: (document.body.getAttribute('data-theme')||'dark') };
 const $ = id => document.getElementById(id);
 function uid(){ return 'p_' + Math.random().toString(36).slice(2,9); }
 
-// NOTE: we will override save/load later to add GitHub sync behaviour
 function save(){ localStorage.setItem(STORE, JSON.stringify(players)); localStorage.setItem(STORE_WEIGHTS, JSON.stringify(weights)); localStorage.setItem('ui_state', JSON.stringify(uiState)); renderList(); renderSelected(); renderNominations(); }
 function load(){ try{ const r = localStorage.getItem(STORE); const w = localStorage.getItem(STORE_WEIGHTS); const u = localStorage.getItem('ui_state'); players = r ? JSON.parse(r) : []; weights = w ? JSON.parse(w) : weights; if(u){ uiState = JSON.parse(u); document.body.setAttribute('data-theme', uiState.theme); } }catch(e){ console.error(e); players = []; } }
 
+/* formulas */
 function computeKD(p){
   const denom = p.deaths === 0 ? 1 : p.deaths;
   const value = denom === 0 ? 0 : p.kills / denom;
@@ -368,7 +353,7 @@ function computeRATING(p){
   return { display: finalRating.toFixed(2), value: finalRating };
 }
 
-/* Ranks & nominations (unchanged) */
+/* ranks & noms */
 function computeRankScore(p){
   const kd_norm = Math.min(computeKD(p).value, 5) / 5;
   const kad_norm = Math.min(computeKAD(p).value, 7) / 7;
@@ -387,7 +372,6 @@ function computeRank(p){
   if(s >= 20) return { id: 'gold', name: 'Gold', cls: 'rank-gold' };
   return { id: 'silver', name: 'Silver', cls: 'rank-silver' };
 }
-
 function computeNominations(players){
   const res = {};
   if(!players.length) return res;
@@ -397,7 +381,6 @@ function computeNominations(players){
   let bestSingle = -1, pidSingle = null;
   let bestCons = Infinity, pidCons = null;
   let bestClutch = -1, pidClutch = null;
-
   players.forEach(p =>{
     if((p.kills||0) > maxKills){ maxKills = p.kills; pidKills = p.id; }
     const kd = computeKD(p).value; if(kd > bestKD){ bestKD = kd; pidKD = p.id; }
@@ -414,7 +397,6 @@ function computeNominations(players){
     const clutchCount = (matches||[]).filter(m=>m.k >= 10 && m.win).length;
     if(clutchCount > bestClutch){ bestClutch = clutchCount; pidClutch = p.id; }
   });
-
   res['Top Kills (all-time)'] = pidKills;
   res['Best KD (all-time)'] = pidKD;
   res['Best AVG (kills/round)'] = pidAVG;
@@ -424,7 +406,7 @@ function computeNominations(players){
   return res;
 }
 
-/* Rendering */
+/* rendering */
 const playersList = $('playersList');
 const countEl = $('count');
 
@@ -489,7 +471,7 @@ function renderNominations(){
   }
 }
 
-/* Selection */
+/* select & display */
 function selectPlayer(id){ selectedId = id; renderList(); renderSelected(); }
 function find(id){ return players.find(x=>x.id===id); }
 function renderSelected(){
@@ -529,8 +511,9 @@ function renderSelected(){
 }
 function updateStatFieldsEmpty(){ ['vKills','vAssists','vDeaths','vRounds','vWins','vLoses','vKD','vKAD','vAVG','vSVR','vWINRATE','vRATING'].forEach(id=>$(id).textContent='—'); $('selRank').style.display='none'; }
 
-/* Create / modify */
+/* create/change */
 $('addBtn').onclick = ()=>{
+  if(!isAdmin()){ return alert('Только админ может добавлять — нажмите "Войти как админ"'); }
   const name = $('name').value.trim();
   if(!name) return alert('Введите имя');
   const p = {
@@ -551,19 +534,20 @@ $('addBtn').onclick = ()=>{
   // reset
   $('name').value=''; $('kills').value=0; $('assists').value=0; $('deaths').value=0; $('rounds').value=0; $('wins').value=0; $('loses').value=0;
 };
-$('addZeroBtn').onclick = ()=>{ const name = $('name').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt:Date.now() }; players.unshift(p); selectedId=p.id; save(); $('name').value=''; };
+$('addZeroBtn').onclick = ()=>{ if(!isAdmin()){ return alert('Только админ может добавлять'); } const name = $('name').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt:Date.now() }; players.unshift(p); selectedId=p.id; save(); $('name').value=''; };
 
 /* list delegation */
 playersList.addEventListener('click', e=>{
   const btn = e.target.closest('button'); if(!btn) return;
   const id = btn.dataset.id; const act = btn.dataset.act;
   if(act === 'open') selectPlayer(id);
-  if(act === 'dup'){ const p = find(id); if(!p) return; const copy = Object.assign({}, p, { id: uid(), name: p.name + '_copy', createdAt: Date.now() }); players.unshift(copy); save(); }
+  if(act === 'dup'){ if(!isAdmin()){ return alert('Только админ может дублировать'); } const p = find(id); if(!p) return; const copy = Object.assign({}, p, { id: uid(), name: p.name + '_copy', createdAt: Date.now() }); players.unshift(copy); save(); }
 });
 
-/* +/- editing */
+/* +/- and editing */
 document.querySelectorAll('[data-op]').forEach(b=> b.addEventListener('click', ()=> applyOp(b.getAttribute('data-op')) ) );
 function applyOp(op){
+  if(!isAdmin()){ return alert('Только админ может менять значения'); }
   if(!selectedId){ alert('Выбери игрока'); return; }
   const p = find(selectedId); if(!p) return;
   switch(op){
@@ -587,6 +571,7 @@ function applyOp(op){
 ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
   const el = $(id); if(!el) return;
   el.onclick = ()=>{
+    if(!isAdmin()){ return alert('Только админ может редактировать'); }
     if(!selectedId){ alert('Выбери игрока'); return; }
     const p = find(selectedId); if(!p) return;
     const map = { editKills:'kills', editAssists:'assists', editDeaths:'deaths', editRounds:'rounds', editWins:'wins', editLoses:'loses' };
@@ -600,6 +585,7 @@ function applyOp(op){
 
 /* delete / reset */
 $('deletePlayer').onclick = ()=>{
+  if(!isAdmin()){ return alert('Только админ может удалять'); }
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Удалить игрока?')) return;
   players = players.filter(x=>x.id !== selectedId);
@@ -607,6 +593,7 @@ $('deletePlayer').onclick = ()=>{
   save();
 };
 $('resetPlayer').onclick = ()=>{
+  if(!isAdmin()){ return alert('Только админ может сбрасывать'); }
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Сбросить все счётчики у игрока?')) return;
   const p = find(selectedId); if(!p) return;
@@ -620,6 +607,7 @@ $('resetPlayer').onclick = ()=>{
   const el = $(id);
   if(!el) return;
   el.oninput = ()=>{
+    if(!isAdmin()){ return; } // only admin can change weights
     weights.kd = Number($('wKD').value);
     weights.kad = Number($('wKAD').value);
     weights.avg = Number($('wAVG').value);
@@ -628,9 +616,10 @@ $('resetPlayer').onclick = ()=>{
     save();
   };
 });
-$('resetWeights').onclick = ()=>{ weights = { kd:30, kad:25, avg:20, svr:10, win:15 }; $('wKD').value=30; $('wKAD').value=25; $('wAVG').value=20; $('wSVR').value=10; $('wWIN').value=15; save(); };
+$('resetWeights').onclick = ()=>{ if(!isAdmin()){ return alert('Только админ может сбросить веса'); } weights = { kd:30, kad:25, avg:20, svr:10, win:15 }; $('wKD').value=30; $('wKAD').value=25; $('wAVG').value=20; $('wSVR').value=10; $('wWIN').value=15; save(); };
 
 /* export/import/clear */
+$('exportAll').onclick = $('exportBtn').onclick;
 $('exportBtn').onclick = ()=>{
   const data = { players, weights };
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
@@ -638,13 +627,14 @@ $('exportBtn').onclick = ()=>{
   const a = document.createElement('a'); a.href = url; a.download = 'players_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
 $('importBtn').onclick = ()=> $('importAll').click();
-$('exportAll').onclick = $('exportBtn').onclick;
 $('importAll').onclick = ()=>{
+  if(!isAdmin()){ return alert('Только админ может импортировать'); }
   const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
   inp.onchange = async ()=>{ const f = inp.files[0]; if(!f) return; try{ const txt = await f.text(); const data = JSON.parse(txt); if(Array.isArray(data.players)) players = data.players; if(data.weights) weights = data.weights; selectedId = players.length ? players[0].id : null; save(); alert('Импорт завершён'); }catch(e){ alert('Ошибка импорта'); console.error(e); } };
   inp.click();
 };
 $('clearAll').onclick = ()=>{
+  if(!isAdmin()){ return alert('Только админ может очищать'); }
   if(!confirm('Уничтожить все данные (лок locally)?')) return;
   players = []; selectedId = null; weights = { kd:30,kad:25,avg:20,svr:10,win:15 }; localStorage.removeItem(STORE); localStorage.removeItem(STORE_WEIGHTS); save();
 };
@@ -654,6 +644,7 @@ $('themeToggle').onclick = ()=>{ const cur = document.body.getAttribute('data-th
 
 /* add match */
 $('addMatchBtn').onclick = ()=>{
+  if(!isAdmin()){ return alert('Только админ может добавлять матчи'); }
   if(!selectedId) return alert('Выбери игрока');
   const k = parseInt(prompt('KILLS в матче', '0')) || 0;
   const a = parseInt(prompt('ASSISTS в матче', '0')) || 0;
@@ -668,7 +659,7 @@ $('addMatchBtn').onclick = ()=>{
   save();
 };
 
-$('clearHistory').onclick = ()=>{ if(!selectedId) return alert('Выбери игрока'); if(!confirm('Очистить историю матчей?')) return; const p=find(selectedId); if(!p) return; p.matches=[]; save(); };
+$('clearHistory').onclick = ()=>{ if(!isAdmin()){ return alert('Только админ может очищать историю'); } if(!selectedId) return alert('Выбери игрока'); if(!confirm('Очистить историю матчей?')) return; const p=find(selectedId); if(!p) return; p.matches=[]; save(); };
 
 function renderHistory(p){
   const list = $('historyList'); list.innerHTML='';
@@ -706,322 +697,122 @@ function escapeHtml(s){ return String(s).replace(/[&<>"]+/g, m => ({'&':'&amp;',
 
 $('searchInput').oninput = renderList; $('sortSelect').onchange = renderList;
 
-/* Initial local load/render */
+/* init */
 load();
 if(players.length && !selectedId) selectedId = players[0].id;
 renderList();
 renderSelected();
 window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId); if(p && p.matches && p.matches.length) drawSpark(p.matches); } });
 
-/* =========================
-   GitHub-sync helpers (single-file solution)
-   - stores repo config in localStorage under 'gh_sync_config_v1'
-   - stores PAT in sessionStorage under 'gh_token_v1' (session only)
-   - admin flow prompts for local password '5ugaradmin', then asks for PAT & repo config
-   ========================= */
-
-/*
-  Usage flow:
-  - Open page on device A. Click "Войти как админ" (admin panel button).
-  - Enter local password: 5ugaradmin
-  - When prompted, enter GitHub Personal Access Token (PAT) that has repo permissions.
-  - Enter repo owner/name/branch/path (e.g. owner: youruser, repo: myrepo, branch: main, path: data/players.json)
-  - After that, any save() will attempt to push the updated players array into the specified file.
-  - On device B (non-admin), load() will try to fetch raw file from GitHub if config exists, otherwise uses localStorage.
-*/
-
-// keys
-const GH_CONFIG_KEY = 'gh_sync_config_v1';
-const GH_TOKEN_KEY = 'gh_token_v1'; // stored in sessionStorage
-
-function getGhConfig(){
-  try{ const s = localStorage.getItem(GH_CONFIG_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; }
+/* ========== SIMPLE ADMIN (password only) ========== */
+const LOCAL_ADMIN_KEY = 'tracker_local_admin_v1';
+function isAdmin(){ return localStorage.getItem(LOCAL_ADMIN_KEY) === '1'; }
+function setAdmin(on){
+  localStorage.setItem(LOCAL_ADMIN_KEY, on ? '1' : '0');
+  updateAdminUI();
 }
-function setGhConfig(cfg){
-  localStorage.setItem(GH_CONFIG_KEY, JSON.stringify(cfg));
-  updateGhLabel();
-}
-function clearGhToken(){ sessionStorage.removeItem(GH_TOKEN_KEY); updateGhLabel(); }
-function setGhToken(token){ sessionStorage.setItem(GH_TOKEN_KEY, token); updateGhLabel(); }
-function getGhToken(){ return sessionStorage.getItem(GH_TOKEN_KEY); }
-
-function updateGhLabel(){
-  const cfg = getGhConfig();
-  const token = getGhToken();
-  const lbl = $('ghConfigLabel');
-  const state = $('syncState');
-  if(!cfg){ lbl.textContent = 'not configured'; state.textContent = ''; return; }
-  lbl.textContent = `${cfg.owner}/${cfg.repo}/${cfg.branch}/${cfg.path}`;
-  if(token) state.textContent = ' (admin: connected)';
-  else state.textContent = ' (read-only)';
-}
-
-/* Fetch raw (public) */
-async function fetchRawPlayers(cfg){
-  if(!cfg) return null;
-  const rawUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${cfg.path}`;
-  try{
-    const resp = await fetch(rawUrl, {cache: 'no-store'});
-    if(!resp.ok) return null;
-    const text = await resp.text();
-    return JSON.parse(text);
-  }catch(e){
-    console.warn('fetchRawPlayers failed', e);
-    return null;
-  }
-}
-
-/* Fetch file metadata via GitHub API (to obtain sha) */
-async function fetchFileMeta(cfg){
-  if(!cfg) return null;
-  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}?ref=${cfg.branch}`;
-  try{
-    const resp = await fetch(apiUrl, { headers: { 'Accept':'application/vnd.github.v3+json' } });
-    if(resp.status === 404) return null; // file not found
-    if(!resp.ok) throw new Error('GitHub API fetchFileMeta failed: ' + resp.status);
-    return await resp.json(); // contains .sha and .content
-  }catch(e){
-    console.warn('fetchFileMeta err', e);
-    return null;
-  }
-}
-
-/* Update or create file on GitHub using PAT */
-async function pushPlayersToGitHub(cfg, token, playersArray, commitMessage = 'Update players via tracker'){
-  if(!cfg) throw new Error('No GH config');
-  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
-  // get current meta to know if exists and obtain sha
-  let current = await fetchFileMeta(cfg);
-  const bodyObj = {
-    message: commitMessage,
-    content: b64EncodeUnicode(JSON.stringify(playersArray, null, 2)),
-    branch: cfg.branch
-  };
-  if(current && current.sha) bodyObj.sha = current.sha;
-  // PUT with auth
-  try{
-    const resp = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: {
-        'Accept':'application/vnd.github.v3+json',
-        'Authorization': 'token ' + token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(bodyObj)
-    });
-    const resJson = await resp.json();
-    if(!resp.ok){
-      console.warn('GitHub push error', resJson);
-      throw new Error('GitHub push failed: ' + (resJson && resJson.message ? resJson.message : resp.status));
-    }
-    return resJson;
-  }catch(e){
-    console.error('pushPlayersToGitHub err', e);
-    throw e;
-  }
-}
-
-/* Helper: base64 encode unicode properly */
-function b64EncodeUnicode(str) {
-    // https://developer.mozilla.org/en-US/docs/Glossary/Base64
-    return btoa(unescape(encodeURIComponent(str)));
-}
-
-/* ADMIN logic integrated with local admin panel: when admin logs in, prompt for PAT & repo config */
-(function adminGitIntegration(){
-  // We'll add handlers to admin login button (which admin panel script injects). If admin panel not injected, we still provide function.
-  window.__gh_setConfig = setGhConfig;
-  window.__gh_setToken = setGhToken;
-  window.__gh_clearToken = clearGhToken;
-  window.__gh_pushNow = async function(){
-    const cfg = getGhConfig();
-    const token = getGhToken();
-    if(!cfg || !token) return alert('Нет конфигурации или токена GitHub. Зайдите как админ и настройте.');
-    try{
-      await pushPlayersToGitHub(cfg, token, players, 'Update players (web tracker)');
-      alert('Push -> OK');
-    }catch(e){
-      alert('Ошибка при push: ' + e.message);
-    }
-  };
-
-  // Hook admin panel button if it exists (the admin panel script below will create buttons with these IDs)
-  document.addEventListener('DOMContentLoaded', ()=>{
-    // If admin UI button exists, attach a flow: ask for local password, if correct ask for PAT & repo config
-    document.addEventListener('click', async (e)=>{
-      const btn = e.target.closest && e.target.closest('button');
-      if(!btn) return;
-      if(btn.id === 'adminLoginBtn'){ // admin clicked local login
-        // Local password (as you asked)
-        const pw = prompt('Введите локальный пароль админа: (5ugaradmin)', '');
-        if(pw === null) return;
-        if(pw !== '5ugaradmin'){ alert('Неверный пароль'); return; }
-        // now ask for GitHub token (PAT)
-        const token = prompt('Вставьте GitHub Personal Access Token (PAT) (repo/public_repo scope). Будет храниться в sessionStorage на время сессии.', '');
-        if(token === null) return;
-        if(!token.trim()){ alert('Токен пуст'); return; }
-        setGhToken(token.trim());
-        // ask for repo config if not already
-        const existing = getGhConfig();
-        let useExisting = false;
-        if(existing){
-          useExisting = confirm(`Использовать текущую конфигурацию репо?\n${existing.owner}/${existing.repo}/${existing.branch}/${existing.path}`);
-        }
-        if(!useExisting){
-          const owner = prompt('GitHub owner (user or org)', existing ? existing.owner : '');
-          if(owner === null) return;
-          const repo = prompt('GitHub repo name', existing ? existing.repo : '');
-          if(repo === null) return;
-          const branch = prompt('Branch (обычно main)', existing ? existing.branch : 'main');
-          if(branch === null) return;
-          const path = prompt('Path to data file in repo (например data/players.json)', existing ? existing.path : 'data/players.json');
-          if(path === null) return;
-          const cfg = { owner: owner.trim(), repo: repo.trim(), branch: branch.trim(), path: path.trim() };
-          setGhConfig(cfg);
-        }
-        updateGhLabel();
-        // attempt to start realtime-ish: try fetch file and offer to pull into local
-        const cfg2 = getGhConfig();
-        try{
-          const cloud = await fetchRawPlayers(cfg2);
-          if(cloud && Array.isArray(cloud)){
-            if(confirm('Загрузить данные из GitHub в локальное хранилище (переписать локальные данные)?')){
-              players = cloud;
-              selectedId = players.length ? players[0].id : null;
-              save();
-              alert('Данные загружены из GitHub');
-            }
-          } else {
-            // if file not found, propose to create
-            if(confirm('Файл не найден в репозитории. Создать новый файл (players = []) в репо сейчас?')){
-              // push empty array right away
-              try{
-                await pushPlayersToGitHub(cfg2, token.trim(), players, 'Create players file (init)');
-                alert('Файл создан в репозитории.');
-              }catch(e){ alert('Не удалось создать файл: ' + e.message); }
-            }
-          }
-        }catch(e){
-          console.warn('After admin login cloud sync check failed', e);
-          alert('Не удалось связаться с GitHub API: ' + (e.message || e));
-        }
-      }
-
-      if(btn.id === 'adminLogoutBtn'){
-        clearGhToken();
-        alert('Admin: token cleared for this session. Local admin flag cleared.');
-      }
-    });
+function updateAdminUI(){
+  const admin = isAdmin();
+  $('adminBadge').style.display = admin ? 'inline-block' : 'none';
+  $('adminLoginBtn').style.display = admin ? 'none' : 'inline-block';
+  $('adminLogoutBtn').style.display = admin ? 'inline-block' : 'none';
+  // enable/disable admin-only buttons
+  const adminOnly = ['addBtn','addZeroBtn','clearForm','deletePlayer','resetPlayer','addMatchBtn','clearHistory','importAll','clearAll','wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll'];
+  adminOnly.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.disabled = !admin;
+    if(el.disabled) el.title = 'Требуется админ (войти через пароль)';
+    else el.title = '';
   });
-})();
-
-/* Finally: override original load/save to integrate GitHub (tries cloud read if config present; save pushes if admin token present) */
-(function integrateSaveLoad(){
-  const ORIGINAL_load = window.load && typeof window.load === 'function' ? window.load.bind(window) : null;
-  const ORIGINAL_save = window.save && typeof window.save === 'function' ? window.save.bind(window) : null;
-
-  window.load = async function(){
-    if(ORIGINAL_load) try{ ORIGINAL_load(); }catch(e){ console.warn(e); }
-    // Try cloud if config present
-    const cfg = getGhConfig();
-    if(cfg){
-      try{
-        const cloud = await fetchRawPlayers(cfg);
-        if(cloud && Array.isArray(cloud)){
-          players = cloud;
-          selectedId = players.length ? players[0].id : null;
-          renderList();
-          renderSelected();
-          console.log('Loaded players from GitHub (raw)');
-        }
-      }catch(e){ console.warn('cloud load failed', e); }
-    }
-  };
-
-  window.save = async function(){
-    if(ORIGINAL_save) try{ ORIGINAL_save(); }catch(e){ console.warn(e); }
-    // attempt push if admin token exists
-    const token = getGhToken();
-    const cfg = getGhConfig();
-    if(token && cfg){
-      try{
-        await pushPlayersToGitHub(cfg, token, players, 'Update players via web tracker');
-        console.log('Pushed to GitHub');
-      }catch(e){
-        console.warn('push failed', e);
-        alert('Не удалось сохранить в GitHub: ' + (e.message || e));
-      }
-    }
-  };
-})();
-
-/* update label initially */
-updateGhLabel();
-
-/* =========================
-   Simple admin panel (local password + integration hooks)
-   - adds buttons in header: Войти как админ / Выйти
-   - these buttons already wired above
-   ========================= */
-(function createAdminPanelUI(){
-  const header = document.querySelector('header');
-  if(!header) return;
-  const target = header.querySelector('.controls') || header;
-  const wrapper = document.createElement('div');
-  wrapper.style.display = 'flex';
-  wrapper.style.alignItems = 'center';
-  wrapper.style.gap = '8px';
-  wrapper.innerHTML = `<div id="adminControls" style="display:flex;gap:8px;align-items:center">
-    <div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
-    <button id="adminLoginBtn">Войти как админ</button>
-    <button id="adminLogoutBtn" style="display:none">Выйти</button>
-  </div>`;
-  target.appendChild(wrapper);
-
-  function isLocalAdmin(){ return localStorage.getItem('is_admin_v3') === '1'; }
-  function setLocalAdmin(on){
-    localStorage.setItem('is_admin_v3', on ? '1' : '0');
-    update();
-  }
-  function update(){
-    const badge = document.getElementById('adminBadge');
-    const loginBtn = document.getElementById('adminLoginBtn');
-    const logoutBtn = document.getElementById('adminLogoutBtn');
-    if(isLocalAdmin()){ if(badge) badge.style.display='inline-block'; if(loginBtn) loginBtn.style.display='none'; if(logoutBtn) logoutBtn.style.display='inline-block'; }
-    else { if(badge) badge.style.display='none'; if(loginBtn) loginBtn.style.display='inline-block'; if(logoutBtn) logoutBtn.style.display='none'; }
-  }
-
-  document.addEventListener('click', (e)=>{
-    const btn = e.target.closest && e.target.closest('button');
-    if(!btn) return;
-    if(btn.id === 'adminLoginBtn'){
-      const pw = prompt('Введите пароль администратора (локально)', '');
-      if(pw === null) return;
-      if(pw === '5ugaradmin'){
-        setLocalAdmin(true);
-        alert('Локальный админ включён — теперь введите GitHub PAT и конфиг (если нужно) через последующие prompts.');
-        // Trigger click flow to prompt for token + config using GH integration code: emulate click to that same button handler used earlier
-        // We rely on the other handler wired in adminGitIntegration's document click listener; just trigger it.
-        // Simulate: call __gh_setToken? but we want interactive prompts — so just trigger a click on the same button to reuse that handler.
-        // The handler that asks for token is bound to adminLoginBtn as well; we'll call it by dispatching another click.
-        setTimeout(()=>{ document.getElementById('adminLoginBtn').dispatchEvent(new MouseEvent('click')); }, 50);
-      } else {
-        alert('Неверный пароль');
-      }
-    }
-    if(btn.id === 'adminLogoutBtn'){
-      setLocalAdmin(false);
-      // also clear session token for safety
-      sessionStorage.removeItem('gh_token_v1');
-      updateGhLabel();
-      alert('Локальный админ выключен; session token cleared.');
-    }
+  // +/- buttons and edit buttons
+  document.querySelectorAll('[data-op]').forEach(b=> b.disabled = !admin);
+  ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.disabled = !admin;
   });
+}
+document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
+  const pw = prompt('Введите пароль администратора:', '');
+  if(pw === null) return;
+  if(pw === '5ugaradmin'){
+    setAdmin(true);
+    alert('Админ включён');
+  } else {
+    alert('Неверный пароль');
+  }
+});
+document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
+  setAdmin(false);
+  alert('Админ выключен');
+});
+updateAdminUI();
 
-  update();
-})();
+/* ========== SIMPLE GitHub RAW URL flow (read-only from raw, write via download/copy) ========== */
+const GH_CFG_KEY = 'tracker_gh_raw_v1';
+function setGhRaw(url){
+  if(!url) { localStorage.removeItem(GH_CFG_KEY); $('ghLabel').textContent = 'GH: not set'; return; }
+  localStorage.setItem(GH_CFG_KEY, url);
+  $('ghLabel').textContent = 'GH: ' + url;
+}
+function getGhRaw(){ return localStorage.getItem(GH_CFG_KEY); }
 
+document.getElementById('cfgGhBtn').addEventListener('click', ()=>{
+  const cur = getGhRaw() || '';
+  const v = prompt('Вставь raw.githubusercontent.com URL к файлу с JSON (пример: https://raw.githubusercontent.com/owner/repo/branch/path/players.json)', cur);
+  if(v === null) return;
+  if(!v.trim()){ setGhRaw(null); alert('GitHub URL очищен'); return; }
+  setGhRaw(v.trim());
+  alert('GitHub raw URL сохранён.');
+});
+
+document.getElementById('pullGhBtn').addEventListener('click', async ()=>{
+  const url = getGhRaw();
+  if(!url) return alert('Сначала укажи GitHub raw URL (нажми "Настроить GitHub URL")');
+  try{
+    const r = await fetch(url, { cache: 'no-store' });
+    if(!r.ok) return alert('Не удалось загрузить файл с GitHub (status ' + r.status + ')');
+    const txt = await r.text();
+    const data = JSON.parse(txt);
+    if(!Array.isArray(data)) {
+      // Some exports store object {players, weights} — handle both
+      if(data.players && Array.isArray(data.players)){ players = data.players; if(data.weights) weights = data.weights; }
+      else return alert('Формат файла на GitHub не похож на ожидаемый массив игроков или объект {players,weights}');
+    } else {
+      players = data;
+    }
+    selectedId = players.length ? players[0].id : null;
+    save();
+    alert('Данные загружены из GitHub (raw).');
+  }catch(e){
+    console.error(e);
+    alert('Ошибка при загрузке/парсинге JSON: ' + e.message);
+  }
+});
+
+/* copy JSON to clipboard */
+document.getElementById('copyJsonBtn').addEventListener('click', async ()=>{
+  const payload = { players, weights };
+  try{
+    await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    alert('JSON скопирован в буфер обмена. Вставь в GitHub web editor.');
+  }catch(e){
+    // fallback: open a prompt with text to copy
+    prompt('Скопируй JSON вручную (Ctrl+C):', JSON.stringify(payload, null, 2));
+  }
+});
+
+/* download JSON file */
+document.getElementById('downloadJsonBtn').addEventListener('click', ()=>{
+  const data = { players, weights };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'players_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* small UX: disable admin-only controls initially via updateAdminUI already called */
+
+/* done */
 </script>
-
 </body>
 </html>
