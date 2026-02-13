@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Статистический трекер — K/A/D/W/L/ROUNDS — Enhanced + Ranks</title>
+<title>Статистический трекер — K/A/D/W/L/ROUNDS — Enhanced + Ranks — GitHub sync</title>
 <style>
   :root{
     --bg:#0b0b0b; --panel:#0f1113; --text:#e9eef8; --muted:#9aa3b2; --accent:#6ee7b7; --glass: rgba(255,255,255,0.03);
@@ -43,6 +43,7 @@
   .rank-diamond{background:linear-gradient(90deg,#b7e0ff,#8fcfff);color:#011}
   .rank-emerald{background:linear-gradient(90deg,#7bf0b3,#4edc93);color:#012}
   .rank-global{background:linear-gradient(90deg,#ffd3ff,#ffb7f0);color:#111}
+  .sync-status{font-size:12px;color:var(--muted);margin-left:8px}
   @media (max-width:1100px){.wrap{grid-template-columns:1fr 360px;max-width:980px} aside:last-child{order:3} }
   @media (max-width:800px){.wrap{grid-template-columns:1fr;padding:12px} header{flex-direction:column;align-items:flex-start;gap:8px} .players{max-height:36vh} .stat-grid{grid-template-columns:repeat(2,1fr)} }
 </style>
@@ -50,15 +51,24 @@
 <body data-theme="dark">
   <div class="wrap">
     <header>
-      <div>
-        <h1>Трекер игроков — K/A/D / MATCH W/L / ROUNDS</h1>
-        <div class="small">Локально → localStorage • Ранги и номинации добавлены</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div>
+          <h1>Трекер игроков — K/A/D / MATCH W/L / ROUNDS</h1>
+          <div class="small">Локально → localStorage • Ранги и номинации</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div class="small">GitHub sync: 
+            <span id="ghConfigLabel" class="small" style="margin-left:6px;color:var(--muted)">not configured</span>
+            <span id="syncState" class="sync-status"></span>
+          </div>
+        </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div class="controls">
           <button id="themeToggle">Тема</button>
           <button id="exportBtn">Экспорт</button>
           <button id="importBtn">Импорт</button>
+          <!-- admin login buttons will be injected by admin panel script -->
         </div>
       </div>
     </header>
@@ -294,27 +304,23 @@
   </div>
 
 <script>
-/* ========== Настройки хранения ========== */
+/* =========================
+   Core app (unchanged logic)
+   ========================= */
 const STORE = 'player_stats_v3';
 const STORE_WEIGHTS = 'player_weights_v3';
-
-/* Структура игрока:
-{ id, name, kills, assists, deaths, rounds, wins, loses, createdAt, matches: [ {k,a,d,r,win,timestamp} ] }
-WINS / LOSES = матчи (match wins / match loses)
-*/
-
 let players = [];
 let selectedId = null;
 let weights = { kd:30, kad:25, avg:20, svr:10, win:15 };
 let uiState = { theme: (document.body.getAttribute('data-theme')||'dark') };
 
-/* ---------- Утилиты ---------- */
 const $ = id => document.getElementById(id);
 function uid(){ return 'p_' + Math.random().toString(36).slice(2,9); }
+
+// NOTE: we will override save/load later to add GitHub sync behaviour
 function save(){ localStorage.setItem(STORE, JSON.stringify(players)); localStorage.setItem(STORE_WEIGHTS, JSON.stringify(weights)); localStorage.setItem('ui_state', JSON.stringify(uiState)); renderList(); renderSelected(); renderNominations(); }
 function load(){ try{ const r = localStorage.getItem(STORE); const w = localStorage.getItem(STORE_WEIGHTS); const u = localStorage.getItem('ui_state'); players = r ? JSON.parse(r) : []; weights = w ? JSON.parse(w) : weights; if(u){ uiState = JSON.parse(u); document.body.setAttribute('data-theme', uiState.theme); } }catch(e){ console.error(e); players = []; } }
 
-/* ---------- Формулы (реализация точно как в описании) ---------- */
 function computeKD(p){
   const denom = p.deaths === 0 ? 1 : p.deaths;
   const value = denom === 0 ? 0 : p.kills / denom;
@@ -358,28 +364,22 @@ function computeRATING(p){
 
   const sumW = (weights.kd + weights.kad + weights.avg + weights.svr + weights.win) || 1;
   const score = (weights.kd*kd_norm + weights.kad*kad_norm + weights.avg*avg_norm + weights.svr*svr_norm + weights.win*win_norm) / sumW;
-
-  // Сохраняем поведение — finalRating = score * 2 (как в оригинале). Не ломаем логику.
   const finalRating = score * 2;
   return { display: finalRating.toFixed(2), value: finalRating };
 }
 
-/* ---------- НОВОЕ: ранги и номинации ---------- */
-// computeRankScore: 0..100 based on normalized metrics (not wins/loses specifically unless winrate contributes)
+/* Ranks & nominations (unchanged) */
 function computeRankScore(p){
   const kd_norm = Math.min(computeKD(p).value, 5) / 5;
   const kad_norm = Math.min(computeKAD(p).value, 7) / 7;
   const avg_norm = Math.min(computeAVG(p).value, 2) / 2;
   const svr_norm = Math.min(Math.max(computeSVR(p).value, 0), 100) / 100;
-
-  const sumW = (weights.kd + weights.kad + weights.avg + weights.svr) || 1; // exclude win weight — ranks are mainly based on playstyle
+  const sumW = (weights.kd + weights.kad + weights.avg + weights.svr) || 1;
   const score = (weights.kd*kd_norm + weights.kad*kad_norm + weights.avg*avg_norm + weights.svr*svr_norm) / sumW;
   return Math.round(score * 100);
 }
-
 function computeRank(p){
   const s = computeRankScore(p);
-  // Custom tiers suggested by you: Silver, Gold, Platinum, Diamond, Emerald, Global
   if(s >= 90) return { id: 'global', name: 'Global', cls: 'rank-global' };
   if(s >= 75) return { id: 'emerald', name: 'Emerald', cls: 'rank-emerald' };
   if(s >= 55) return { id: 'diamond', name: 'Diamond', cls: 'rank-diamond' };
@@ -388,31 +388,22 @@ function computeRank(p){
   return { id: 'silver', name: 'Silver', cls: 'rank-silver' };
 }
 
-// Nominations: compute winners for several categories
 function computeNominations(players){
   const res = {};
   if(!players.length) return res;
-  // 1) Highest all-time kills
   let maxKills = -1, pidKills = null;
-  // 2) Best KD (by computeKD value)
   let bestKD = -1, pidKD = null;
-  // 3) Highest AVG (kills/rounds)
   let bestAVG = -1, pidAVG = null;
-  // 4) Highest single-match performance (kills in one match)
   let bestSingle = -1, pidSingle = null;
-  // 5) Most consistent (lowest stddev of kills per match, at least 3 matches)
   let bestCons = Infinity, pidCons = null;
-  // 6) Clutch King — matches where player had >= 10 kills and won
   let bestClutch = -1, pidClutch = null;
 
   players.forEach(p =>{
     if((p.kills||0) > maxKills){ maxKills = p.kills; pidKills = p.id; }
     const kd = computeKD(p).value; if(kd > bestKD){ bestKD = kd; pidKD = p.id; }
     const avg = computeAVG(p).value; if(avg > bestAVG){ bestAVG = avg; pidAVG = p.id; }
-
     const matches = p.matches || [];
     matches.forEach(m=>{ if(m.k > bestSingle){ bestSingle = m.k; pidSingle = p.id; } });
-
     if(matches.length >= 3){
       const arr = matches.map(m=>m.k);
       const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
@@ -420,7 +411,6 @@ function computeNominations(players){
       const std = Math.sqrt(variance);
       if(std < bestCons){ bestCons = std; pidCons = p.id; }
     }
-
     const clutchCount = (matches||[]).filter(m=>m.k >= 10 && m.win).length;
     if(clutchCount > bestClutch){ bestClutch = clutchCount; pidClutch = p.id; }
   });
@@ -434,7 +424,7 @@ function computeNominations(players){
   return res;
 }
 
-/* ---------- Рендер списка + топ + номинации ---------- */
+/* Rendering */
 const playersList = $('playersList');
 const countEl = $('count');
 
@@ -499,10 +489,9 @@ function renderNominations(){
   }
 }
 
-/* ---------- Выбор и отображение выбранного ---------- */
+/* Selection */
 function selectPlayer(id){ selectedId = id; renderList(); renderSelected(); }
 function find(id){ return players.find(x=>x.id===id); }
-
 function renderSelected(){
   const nameEl = $('selName'), infoEl = $('selInfo');
   if(!selectedId){ nameEl.textContent = 'Нет выбранного игрока'; infoEl.textContent = 'Выбери слева'; updateStatFieldsEmpty(); return; }
@@ -529,7 +518,6 @@ function renderSelected(){
   $('vWINRATE').textContent = computeWINRATE(p).display;
   $('vRATING').textContent = computeRATING(p).display;
 
-  // history
   const matches = p.matches || [];
   $('matchCount').textContent = 'Матчей: ' + matches.length;
   if(matches.length){
@@ -541,7 +529,7 @@ function renderSelected(){
 }
 function updateStatFieldsEmpty(){ ['vKills','vAssists','vDeaths','vRounds','vWins','vLoses','vKD','vKAD','vAVG','vSVR','vWINRATE','vRATING'].forEach(id=>$(id).textContent='—'); $('selRank').style.display='none'; }
 
-/* ---------- Создание / изменение ---------- */
+/* Create / modify */
 $('addBtn').onclick = ()=>{
   const name = $('name').value.trim();
   if(!name) return alert('Введите имя');
@@ -560,18 +548,12 @@ $('addBtn').onclick = ()=>{
   players.unshift(p);
   selectedId = p.id;
   save();
-  // Сброс формы
-  $('name').value = '';
-  $('kills').value = 0;
-  $('assists').value = 0;
-  $('deaths').value = 0;
-  $('rounds').value = 0;
-  $('wins').value = 0;
-  $('loses').value = 0;
+  // reset
+  $('name').value=''; $('kills').value=0; $('assists').value=0; $('deaths').value=0; $('rounds').value=0; $('wins').value=0; $('loses').value=0;
 };
 $('addZeroBtn').onclick = ()=>{ const name = $('name').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt:Date.now() }; players.unshift(p); selectedId=p.id; save(); $('name').value=''; };
 
-/* Делегирование кликов по списку */
+/* list delegation */
 playersList.addEventListener('click', e=>{
   const btn = e.target.closest('button'); if(!btn) return;
   const id = btn.dataset.id; const act = btn.dataset.act;
@@ -579,9 +561,8 @@ playersList.addEventListener('click', e=>{
   if(act === 'dup'){ const p = find(id); if(!p) return; const copy = Object.assign({}, p, { id: uid(), name: p.name + '_copy', createdAt: Date.now() }); players.unshift(copy); save(); }
 });
 
-/* ---------- + / - и прямое редактирование ---------- */
+/* +/- editing */
 document.querySelectorAll('[data-op]').forEach(b=> b.addEventListener('click', ()=> applyOp(b.getAttribute('data-op')) ) );
-
 function applyOp(op){
   if(!selectedId){ alert('Выбери игрока'); return; }
   const p = find(selectedId); if(!p) return;
@@ -602,7 +583,7 @@ function applyOp(op){
   save();
 }
 
-/* Прямое редактирование через prompt */
+/* direct edit */
 ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
   const el = $(id); if(!el) return;
   el.onclick = ()=>{
@@ -617,7 +598,7 @@ function applyOp(op){
   };
 });
 
-/* ---------- Удаление / сброс ---------- */
+/* delete / reset */
 $('deletePlayer').onclick = ()=>{
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Удалить игрока?')) return;
@@ -634,7 +615,7 @@ $('resetPlayer').onclick = ()=>{
   save();
 };
 
-/* ---------- Веса (слайдеры) ---------- */
+/* weights */
 ['wKD','wKAD','wAVG','wSVR','wWIN'].forEach(id=>{
   const el = $(id);
   if(!el) return;
@@ -649,7 +630,7 @@ $('resetPlayer').onclick = ()=>{
 });
 $('resetWeights').onclick = ()=>{ weights = { kd:30, kad:25, avg:20, svr:10, win:15 }; $('wKD').value=30; $('wKAD').value=25; $('wAVG').value=20; $('wSVR').value=10; $('wWIN').value=15; save(); };
 
-/* ---------- Экспорт / импорт / очистка ---------- */
+/* export/import/clear */
 $('exportBtn').onclick = ()=>{
   const data = { players, weights };
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
@@ -668,13 +649,12 @@ $('clearAll').onclick = ()=>{
   players = []; selectedId = null; weights = { kd:30,kad:25,avg:20,svr:10,win:15 }; localStorage.removeItem(STORE); localStorage.removeItem(STORE_WEIGHTS); save();
 };
 
-/* ---------- Тема ---------- */
+/* theme */
 $('themeToggle').onclick = ()=>{ const cur = document.body.getAttribute('data-theme') || 'dark'; const next = cur === 'dark' ? 'light' : 'dark'; document.body.setAttribute('data-theme', next); uiState.theme = next; save(); };
 
-/* ---------- Добавление матча (интеллект) ---------- */
+/* add match */
 $('addMatchBtn').onclick = ()=>{
   if(!selectedId) return alert('Выбери игрока');
-  // modal-lite: single custom form using prompt group for simplicity (non-blocking enhancement can be added)
   const k = parseInt(prompt('KILLS в матче', '0')) || 0;
   const a = parseInt(prompt('ASSISTS в матче', '0')) || 0;
   const d = parseInt(prompt('DEATHS в матче', '0')) || 0;
@@ -698,7 +678,6 @@ function renderHistory(p){
     el.innerHTML = `<div>K:${m.k} A:${m.a} D:${m.d} R:${m.r}</div><div>${m.win? 'W':'L'} • ${new Date(m.timestamp).toLocaleString()}</div>`;
     list.appendChild(el);
   });
-  // draw sparkline for kills
   drawSpark(p.matches||[]);
 }
 
@@ -723,131 +702,326 @@ function drawSpark(matches){
   ctx.stroke();
 }
 
-/* ---------- Малые утилиты ---------- */
 function escapeHtml(s){ return String(s).replace(/[&<>"]+/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]||m)); }
 
-/* ---------- События поиска/сортировки ---------- */
 $('searchInput').oninput = renderList; $('sortSelect').onchange = renderList;
 
-/* ---------- Инициализация ---------- */
+/* Initial local load/render */
 load();
 if(players.length && !selectedId) selectedId = players[0].id;
 renderList();
 renderSelected();
-
-// keep canvas responsive on resize
 window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId); if(p && p.matches && p.matches.length) drawSpark(p.matches); } });
 
-</script>
+/* =========================
+   GitHub-sync helpers (single-file solution)
+   - stores repo config in localStorage under 'gh_sync_config_v1'
+   - stores PAT in sessionStorage under 'gh_token_v1' (session only)
+   - admin flow prompts for local password '5ugaradmin', then asks for PAT & repo config
+   ========================= */
 
-<!-- === admin panel (вставлен последним, перед </body>) === -->
-<script>
-(function(){
-  const ADMIN_KEY = 'is_admin_v3';
-  const PASSWORD = '5ugaradmin'; // пароль для включения админ-статуса
+/*
+  Usage flow:
+  - Open page on device A. Click "Войти как админ" (admin panel button).
+  - Enter local password: 5ugaradmin
+  - When prompted, enter GitHub Personal Access Token (PAT) that has repo permissions.
+  - Enter repo owner/name/branch/path (e.g. owner: youruser, repo: myrepo, branch: main, path: data/players.json)
+  - After that, any save() will attempt to push the updated players array into the specified file.
+  - On device B (non-admin), load() will try to fetch raw file from GitHub if config exists, otherwise uses localStorage.
+*/
 
-  function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
-  function setAdmin(on){
-    localStorage.setItem(ADMIN_KEY, on ? '1' : '0');
-    updateAdminUI();
+// keys
+const GH_CONFIG_KEY = 'gh_sync_config_v1';
+const GH_TOKEN_KEY = 'gh_token_v1'; // stored in sessionStorage
+
+function getGhConfig(){
+  try{ const s = localStorage.getItem(GH_CONFIG_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; }
+}
+function setGhConfig(cfg){
+  localStorage.setItem(GH_CONFIG_KEY, JSON.stringify(cfg));
+  updateGhLabel();
+}
+function clearGhToken(){ sessionStorage.removeItem(GH_TOKEN_KEY); updateGhLabel(); }
+function setGhToken(token){ sessionStorage.setItem(GH_TOKEN_KEY, token); updateGhLabel(); }
+function getGhToken(){ return sessionStorage.getItem(GH_TOKEN_KEY); }
+
+function updateGhLabel(){
+  const cfg = getGhConfig();
+  const token = getGhToken();
+  const lbl = $('ghConfigLabel');
+  const state = $('syncState');
+  if(!cfg){ lbl.textContent = 'not configured'; state.textContent = ''; return; }
+  lbl.textContent = `${cfg.owner}/${cfg.repo}/${cfg.branch}/${cfg.path}`;
+  if(token) state.textContent = ' (admin: connected)';
+  else state.textContent = ' (read-only)';
+}
+
+/* Fetch raw (public) */
+async function fetchRawPlayers(cfg){
+  if(!cfg) return null;
+  const rawUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${cfg.path}`;
+  try{
+    const resp = await fetch(rawUrl, {cache: 'no-store'});
+    if(!resp.ok) return null;
+    const text = await resp.text();
+    return JSON.parse(text);
+  }catch(e){
+    console.warn('fetchRawPlayers failed', e);
+    return null;
   }
+}
 
-  function createAdminPanel(){
-    const header = document.querySelector('header');
-    if(!header) return;
-    const wrapper = document.createElement('div');
-    wrapper.id = 'adminPanelWrapper';
-    wrapper.style.display = 'flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '8px';
-    wrapper.style.marginLeft = '12px';
-    wrapper.innerHTML = `
-      <div id="adminControls" style="display:flex;gap:8px;align-items:center">
-        <div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
-        <button id="adminLoginBtn">Войти как админ</button>
-        <button id="adminLogoutBtn" style="display:none">Выйти</button>
-      </div>
-    `;
-    const target = header.querySelector('.controls') || header;
-    target.appendChild(wrapper);
+/* Fetch file metadata via GitHub API (to obtain sha) */
+async function fetchFileMeta(cfg){
+  if(!cfg) return null;
+  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}?ref=${cfg.branch}`;
+  try{
+    const resp = await fetch(apiUrl, { headers: { 'Accept':'application/vnd.github.v3+json' } });
+    if(resp.status === 404) return null; // file not found
+    if(!resp.ok) throw new Error('GitHub API fetchFileMeta failed: ' + resp.status);
+    return await resp.json(); // contains .sha and .content
+  }catch(e){
+    console.warn('fetchFileMeta err', e);
+    return null;
+  }
+}
 
-    document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
-      const pw = prompt('Введите пароль администратора');
-      if(pw === null) return;
-      if(pw === PASSWORD){ setAdmin(true); alert('Админ включён'); }
-      else alert('Неверный пароль');
+/* Update or create file on GitHub using PAT */
+async function pushPlayersToGitHub(cfg, token, playersArray, commitMessage = 'Update players via tracker'){
+  if(!cfg) throw new Error('No GH config');
+  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
+  // get current meta to know if exists and obtain sha
+  let current = await fetchFileMeta(cfg);
+  const bodyObj = {
+    message: commitMessage,
+    content: b64EncodeUnicode(JSON.stringify(playersArray, null, 2)),
+    branch: cfg.branch
+  };
+  if(current && current.sha) bodyObj.sha = current.sha;
+  // PUT with auth
+  try{
+    const resp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Accept':'application/vnd.github.v3+json',
+        'Authorization': 'token ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bodyObj)
     });
-    document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{ setAdmin(false); alert('Админ выключен'); });
+    const resJson = await resp.json();
+    if(!resp.ok){
+      console.warn('GitHub push error', resJson);
+      throw new Error('GitHub push failed: ' + (resJson && resJson.message ? resJson.message : resp.status));
+    }
+    return resJson;
+  }catch(e){
+    console.error('pushPlayersToGitHub err', e);
+    throw e;
   }
+}
 
-  function updateAdminUI(){
-    const admin = isAdmin();
+/* Helper: base64 encode unicode properly */
+function b64EncodeUnicode(str) {
+    // https://developer.mozilla.org/en-US/docs/Glossary/Base64
+    return btoa(unescape(encodeURIComponent(str)));
+}
+
+/* ADMIN logic integrated with local admin panel: when admin logs in, prompt for PAT & repo config */
+(function adminGitIntegration(){
+  // We'll add handlers to admin login button (which admin panel script injects). If admin panel not injected, we still provide function.
+  window.__gh_setConfig = setGhConfig;
+  window.__gh_setToken = setGhToken;
+  window.__gh_clearToken = clearGhToken;
+  window.__gh_pushNow = async function(){
+    const cfg = getGhConfig();
+    const token = getGhToken();
+    if(!cfg || !token) return alert('Нет конфигурации или токена GitHub. Зайдите как админ и настройте.');
+    try{
+      await pushPlayersToGitHub(cfg, token, players, 'Update players (web tracker)');
+      alert('Push -> OK');
+    }catch(e){
+      alert('Ошибка при push: ' + e.message);
+    }
+  };
+
+  // Hook admin panel button if it exists (the admin panel script below will create buttons with these IDs)
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // If admin UI button exists, attach a flow: ask for local password, if correct ask for PAT & repo config
+    document.addEventListener('click', async (e)=>{
+      const btn = e.target.closest && e.target.closest('button');
+      if(!btn) return;
+      if(btn.id === 'adminLoginBtn'){ // admin clicked local login
+        // Local password (as you asked)
+        const pw = prompt('Введите локальный пароль админа: (5ugaradmin)', '');
+        if(pw === null) return;
+        if(pw !== '5ugaradmin'){ alert('Неверный пароль'); return; }
+        // now ask for GitHub token (PAT)
+        const token = prompt('Вставьте GitHub Personal Access Token (PAT) (repo/public_repo scope). Будет храниться в sessionStorage на время сессии.', '');
+        if(token === null) return;
+        if(!token.trim()){ alert('Токен пуст'); return; }
+        setGhToken(token.trim());
+        // ask for repo config if not already
+        const existing = getGhConfig();
+        let useExisting = false;
+        if(existing){
+          useExisting = confirm(`Использовать текущую конфигурацию репо?\n${existing.owner}/${existing.repo}/${existing.branch}/${existing.path}`);
+        }
+        if(!useExisting){
+          const owner = prompt('GitHub owner (user or org)', existing ? existing.owner : '');
+          if(owner === null) return;
+          const repo = prompt('GitHub repo name', existing ? existing.repo : '');
+          if(repo === null) return;
+          const branch = prompt('Branch (обычно main)', existing ? existing.branch : 'main');
+          if(branch === null) return;
+          const path = prompt('Path to data file in repo (например data/players.json)', existing ? existing.path : 'data/players.json');
+          if(path === null) return;
+          const cfg = { owner: owner.trim(), repo: repo.trim(), branch: branch.trim(), path: path.trim() };
+          setGhConfig(cfg);
+        }
+        updateGhLabel();
+        // attempt to start realtime-ish: try fetch file and offer to pull into local
+        const cfg2 = getGhConfig();
+        try{
+          const cloud = await fetchRawPlayers(cfg2);
+          if(cloud && Array.isArray(cloud)){
+            if(confirm('Загрузить данные из GitHub в локальное хранилище (переписать локальные данные)?')){
+              players = cloud;
+              selectedId = players.length ? players[0].id : null;
+              save();
+              alert('Данные загружены из GitHub');
+            }
+          } else {
+            // if file not found, propose to create
+            if(confirm('Файл не найден в репозитории. Создать новый файл (players = []) в репо сейчас?')){
+              // push empty array right away
+              try{
+                await pushPlayersToGitHub(cfg2, token.trim(), players, 'Create players file (init)');
+                alert('Файл создан в репозитории.');
+              }catch(e){ alert('Не удалось создать файл: ' + e.message); }
+            }
+          }
+        }catch(e){
+          console.warn('After admin login cloud sync check failed', e);
+          alert('Не удалось связаться с GitHub API: ' + (e.message || e));
+        }
+      }
+
+      if(btn.id === 'adminLogoutBtn'){
+        clearGhToken();
+        alert('Admin: token cleared for this session. Local admin flag cleared.');
+      }
+    });
+  });
+})();
+
+/* Finally: override original load/save to integrate GitHub (tries cloud read if config present; save pushes if admin token present) */
+(function integrateSaveLoad(){
+  const ORIGINAL_load = window.load && typeof window.load === 'function' ? window.load.bind(window) : null;
+  const ORIGINAL_save = window.save && typeof window.save === 'function' ? window.save.bind(window) : null;
+
+  window.load = async function(){
+    if(ORIGINAL_load) try{ ORIGINAL_load(); }catch(e){ console.warn(e); }
+    // Try cloud if config present
+    const cfg = getGhConfig();
+    if(cfg){
+      try{
+        const cloud = await fetchRawPlayers(cfg);
+        if(cloud && Array.isArray(cloud)){
+          players = cloud;
+          selectedId = players.length ? players[0].id : null;
+          renderList();
+          renderSelected();
+          console.log('Loaded players from GitHub (raw)');
+        }
+      }catch(e){ console.warn('cloud load failed', e); }
+    }
+  };
+
+  window.save = async function(){
+    if(ORIGINAL_save) try{ ORIGINAL_save(); }catch(e){ console.warn(e); }
+    // attempt push if admin token exists
+    const token = getGhToken();
+    const cfg = getGhConfig();
+    if(token && cfg){
+      try{
+        await pushPlayersToGitHub(cfg, token, players, 'Update players via web tracker');
+        console.log('Pushed to GitHub');
+      }catch(e){
+        console.warn('push failed', e);
+        alert('Не удалось сохранить в GitHub: ' + (e.message || e));
+      }
+    }
+  };
+})();
+
+/* update label initially */
+updateGhLabel();
+
+/* =========================
+   Simple admin panel (local password + integration hooks)
+   - adds buttons in header: Войти как админ / Выйти
+   - these buttons already wired above
+   ========================= */
+(function createAdminPanelUI(){
+  const header = document.querySelector('header');
+  if(!header) return;
+  const target = header.querySelector('.controls') || header;
+  const wrapper = document.createElement('div');
+  wrapper.style.display = 'flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.gap = '8px';
+  wrapper.innerHTML = `<div id="adminControls" style="display:flex;gap:8px;align-items:center">
+    <div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
+    <button id="adminLoginBtn">Войти как админ</button>
+    <button id="adminLogoutBtn" style="display:none">Выйти</button>
+  </div>`;
+  target.appendChild(wrapper);
+
+  function isLocalAdmin(){ return localStorage.getItem('is_admin_v3') === '1'; }
+  function setLocalAdmin(on){
+    localStorage.setItem('is_admin_v3', on ? '1' : '0');
+    update();
+  }
+  function update(){
     const badge = document.getElementById('adminBadge');
     const loginBtn = document.getElementById('adminLoginBtn');
     const logoutBtn = document.getElementById('adminLogoutBtn');
-    if(badge) badge.style.display = admin ? 'inline-block' : 'none';
-    if(loginBtn) loginBtn.style.display = admin ? 'none' : 'inline-block';
-    if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none';
-
-    // ID элементов, которыми нельзя управлять без админа
-    const protectedIds = [
-      'addBtn','addZeroBtn','clearForm',
-      'deletePlayer','resetPlayer',
-      'addMatchBtn','clearHistory',
-      'importAll','importBtn','clearAll','importBtn',
-      'wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll','importAll'
-    ];
-    protectedIds.forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.disabled = !admin;
-    });
-
-    // заблокировать + / - кнопки и "Изм." кнопки
-    document.querySelectorAll('[data-op]').forEach(b=> b.disabled = !admin);
-    ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.disabled = !admin;
-    });
-
-    // дублирование записей в списке (кнопки с data-act="dup")
-    document.querySelectorAll('#playersList button[data-act="dup"]').forEach(b=> b.disabled = !admin);
-
-    // слайдеры (weights)
-    ['wKD','wKAD','wAVG','wSVR','wWIN'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.disabled = !admin;
-    });
-
-    // подсказка на заблокированных элементах
-    document.querySelectorAll('button, input[type="range"]').forEach(el=>{
-      if(el.disabled) el.title = 'Требуется админ статус';
-      else if(el.title === 'Требуется админ статус') el.title = '';
-    });
+    if(isLocalAdmin()){ if(badge) badge.style.display='inline-block'; if(loginBtn) loginBtn.style.display='none'; if(logoutBtn) logoutBtn.style.display='inline-block'; }
+    else { if(badge) badge.style.display='none'; if(loginBtn) loginBtn.style.display='inline-block'; if(logoutBtn) logoutBtn.style.display='none'; }
   }
 
-  // дополнительная страховка: блокируем клик по disabled-кнопкам (если кто-то по JS снимает disabled)
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('button');
+  document.addEventListener('click', (e)=>{
+    const btn = e.target.closest && e.target.closest('button');
     if(!btn) return;
-    if(btn.disabled){
-      e.stopImmediatePropagation();
-      e.preventDefault();
-      if(!isAdmin()) {
-        console.warn('Действие заблокировано — требуется админ статус');
+    if(btn.id === 'adminLoginBtn'){
+      const pw = prompt('Введите пароль администратора (локально)', '');
+      if(pw === null) return;
+      if(pw === '5ugaradmin'){
+        setLocalAdmin(true);
+        alert('Локальный админ включён — теперь введите GitHub PAT и конфиг (если нужно) через последующие prompts.');
+        // Trigger click flow to prompt for token + config using GH integration code: emulate click to that same button handler used earlier
+        // We rely on the other handler wired in adminGitIntegration's document click listener; just trigger it.
+        // Simulate: call __gh_setToken? but we want interactive prompts — so just trigger a click on the same button to reuse that handler.
+        // The handler that asks for token is bound to adminLoginBtn as well; we'll call it by dispatching another click.
+        setTimeout(()=>{ document.getElementById('adminLoginBtn').dispatchEvent(new MouseEvent('click')); }, 50);
+      } else {
+        alert('Неверный пароль');
       }
     }
-  }, true);
+    if(btn.id === 'adminLogoutBtn'){
+      setLocalAdmin(false);
+      // also clear session token for safety
+      sessionStorage.removeItem('gh_token_v1');
+      updateGhLabel();
+      alert('Локальный админ выключен; session token cleared.');
+    }
+  });
 
-  // Инициализация
-  createAdminPanel();
-  updateAdminUI();
-
-  // экспонируем в консоль для отладки: window.__setAdmin(true/false)
-  window.__setAdmin = setAdmin;
+  update();
 })();
+
 </script>
-<!-- === /admin panel === -->
 
 </body>
 </html>
-
