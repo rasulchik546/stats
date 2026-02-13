@@ -664,7 +664,7 @@ $('importAll').onclick = ()=>{
   inp.click();
 };
 $('clearAll').onclick = ()=>{
-  if(!confirm('Уничтожить все данные (лок locally)?')) return;
+  if(!confirm('Уничтожить все данные (локально)?')) return;
   players = []; selectedId = null; weights = { kd:30,kad:25,avg:20,svr:10,win:15 }; localStorage.removeItem(STORE); localStorage.removeItem(STORE_WEIGHTS); save();
 };
 
@@ -790,12 +790,13 @@ window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId)
     if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none';
 
     // ID элементов, которыми нельзя управлять без админа
+    // Импорт (importAll, importBtn) теперь доступен всем — убрали из защищённых
     const protectedIds = [
       'addBtn','addZeroBtn','clearForm',
       'deletePlayer','resetPlayer',
       'addMatchBtn','clearHistory',
-      'importAll','importBtn','clearAll','importBtn',
-      'wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll','importAll'
+      'clearAll',
+      'wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll'
     ];
     protectedIds.forEach(id=>{
       const el = document.getElementById(id);
@@ -812,7 +813,7 @@ window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId)
     // дублирование записей в списке (кнопки с data-act="dup")
     document.querySelectorAll('#playersList button[data-act="dup"]').forEach(b=> b.disabled = !admin);
 
-    // слайдеры (weights)
+    // слайдеры (weights) — уже защищены через protectedIds, но повтор для надёжности
     ['wKD','wKAD','wAVG','wSVR','wWIN'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.disabled = !admin;
