@@ -59,8 +59,6 @@
           <button id="themeToggle">Тема</button>
           <button id="exportBtn">Экспорт</button>
           <button id="importBtn">Импорт</button>
-          <!-- Новая кнопка Сохранить (только для админа) -->
-          <button id="saveBtn" title="Сохранение (только для админа)">Сохранить</button>
         </div>
       </div>
     </header>
@@ -313,10 +311,6 @@ let uiState = { theme: (document.body.getAttribute('data-theme')||'dark') };
 /* ---------- Утилиты ---------- */
 const $ = id => document.getElementById(id);
 function uid(){ return 'p_' + Math.random().toString(36).slice(2,9); }
-
-/* helper: check admin by localStorage key used in admin panel */
-function isAdmin(){ return localStorage.getItem('is_admin_v3') === '1'; }
-
 function save(){ localStorage.setItem(STORE, JSON.stringify(players)); localStorage.setItem(STORE_WEIGHTS, JSON.stringify(weights)); localStorage.setItem('ui_state', JSON.stringify(uiState)); renderList(); renderSelected(); renderNominations(); }
 function load(){ try{ const r = localStorage.getItem(STORE); const w = localStorage.getItem(STORE_WEIGHTS); const u = localStorage.getItem('ui_state'); players = r ? JSON.parse(r) : []; weights = w ? JSON.parse(w) : weights; if(u){ uiState = JSON.parse(u); document.body.setAttribute('data-theme', uiState.theme); } }catch(e){ console.error(e); players = []; } }
 
@@ -744,33 +738,6 @@ renderSelected();
 // keep canvas responsive on resize
 window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId); if(p && p.matches && p.matches.length) drawSpark(p.matches); } });
 
-/* ========== НОВЫЙ: Сохранение (Save) — только для админа ========= */
-document.getElementById('saveBtn').addEventListener('click', async ()=>{
-  if(!isAdmin()){
-    return alert('Сохранение доступно только при админ-статусе. Нажми "Войти как админ".');
-  }
-  const payload = { players, weights };
-
-  // 1) скачать файл
-  try{
-    const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'players_export.json'; document.body.appendChild(a);
-    a.click(); a.remove(); URL.revokeObjectURL(url);
-  }catch(e){
-    console.error('Download failed', e);
-  }
-
-  // 2) попробовать скопировать JSON в буфер (удобно для вставки в GitHub web editor)
-  try{
-    await navigator.clipboard.writeText(JSON.stringify(payload,null,2));
-    alert('Данные сохранены: файл скачан и JSON скопирован в буфер обмена.\n\nЧтобы обновить сайт: открой свой репозиторий на GitHub и через web-редактор замени старый JSON файлом (или вставь содержимое из буфера).');
-  }catch(e){
-    // fallback: show prompt with text to copy manually
-    prompt('JSON (скопируй вручную Ctrl+C):', JSON.stringify(payload,null,2));
-    alert('Файл скачан. JSON показан в окне для ручного копирования (из-за ограничений буфера).');
-  }
-});
 </script>
 
 <!-- === admin panel (вставлен последним, перед </body>) === -->
@@ -828,8 +795,7 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
       'deletePlayer','resetPlayer',
       'addMatchBtn','clearHistory',
       'importAll','importBtn','clearAll','importBtn',
-      'wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll','importAll',
-      'saveBtn' // новая кнопка Save — только для админа
+      'wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll','importAll'
     ];
     protectedIds.forEach(id=>{
       const el = document.getElementById(id);
