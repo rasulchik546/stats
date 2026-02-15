@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Трекер — HLTV-like Rating (переписанный)</title>
+<title>Трекер — HLTV-like Rating (исправленный)</title>
 <style>
   :root{
     --bg:#0b0b0b; --panel:#0f1113; --text:#e9eef8; --muted:#9aa3b2; --accent:#6ee7b7;
@@ -54,10 +54,12 @@
         <div class="small">localStorage • рейтинг: KRP/DPR/Impact → 0.60–1.70</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button id="btnRanks">Звания</button>
-        <button id="btnNoms">Номинации</button>
-        <button id="exportBtn">Экспорт</button>
-        <button id="importBtn">Импорт</button>
+        <div class="controls" id="headerControls">
+          <button id="btnRanks">Звания</button>
+          <button id="btnNoms">Номинации</button>
+          <button id="exportBtn">Экспорт</button>
+          <button id="importBtn">Импорт</button>
+        </div>
       </div>
     </header>
 
@@ -106,6 +108,11 @@
       </div>
 
       <div class="players" id="playersList" style="margin-top:10px"></div>
+
+      <div class="card" style="margin-top:10px">
+        <div class="small"><strong>Номинации (кто что)</strong></div>
+        <div id="nominationsList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
+      </div>
     </aside>
 
     <!-- CENTER: selected details -->
@@ -174,8 +181,14 @@
     <!-- RIGHT: formulas + quick help -->
     <aside class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>Формулы</strong>
+        <strong>Параметры и экспорт</strong>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="exportAll">Экспорт JSON</button>
+          <button id="importAll">Импорт JSON</button>
+          <button id="clearAll" style="color:#ff7b7b">Очистить всё</button>
+        </div>
       </div>
+
       <div class="small" style="margin-top:10px;line-height:1.4">
         <div><b>KRP</b> = K / R</div>
         <div><b>DPR</b> = D / R</div>
@@ -184,18 +197,18 @@
         rating ≈ 0.60 + score × 1.10, где score ∈ [0..1].</div>
       </div>
       <hr style="margin:10px 0;border:none;height:8px">
-      <div><b>Пороги званий</b></div>
+      <div><b>Пороги званий (строже)</b></div>
       <div class="small" style="margin-top:6px;line-height:1.4">
-        &lt; 0.80 — Silver<br>
-        0.80 — 0.95 — Gold<br>
-        0.95 — 1.10 — Platinum<br>
-        1.10 — 1.30 — Emerald<br>
-        ≥ 1.30 — Global<br>
-        — при R=0 → Unranked
+        Unranked — R = 0<br>
+        Silver — 0.00 — 0.84<br>
+        Gold — 0.85 — 0.99<br>
+        Platinum — 1.00 — 1.14<br>
+        Emerald — 1.15 — 1.34<br>
+        Global — ≥ 1.35
       </div>
     </aside>
 
-    <footer>Переписанный трекер: модальные формы, реалистичный рейтинг, удалён KAST и Damage. Если нужно — добавлю экспорт CSV и автоматический подсчёт KAST из матчей.</footer>
+    <footer>Исправленный трекер: админ-панель восстановлена, экспорт/импорт работают, ранги усложнены, рейтинг округляется до 2 знаков.</footer>
   </div>
 
   <!-- MODALS -->
@@ -246,6 +259,9 @@
 <script>
 /* ========== Storage & state ========== */
 const STORE_KEY = 'tracker_v_rewrite_v1';
+const ADMIN_KEY = 'is_admin_v3';
+const ADMIN_PASSWORD = '5ugaradmin';
+
 let players = []; // array of player objects
 let selectedId = null;
 
@@ -270,7 +286,7 @@ function save(){
 
 /* ---------- Utils ---------- */
 function uid(){ return 'p_' + Math.random().toString(36).slice(2,9); }
-function escape(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ---------- Metrics: KRP, DPR, Impact, Rating ---------- */
 function krp(p){ if(!p.rounds) return {value:null, display:'—'}; const v = p.kills / p.rounds; return {value:v, display:v.toFixed(3)}; }
@@ -287,7 +303,7 @@ function normalize(v, expectedMax){
 /* compute rating: normalized combination -> 0.60..1.70
    weights: KRP 0.4, DPR 0.2 (applied as 1 - normDPR), IMP 0.4
    expectedMax chosen conservatively (1.5)
-   *** Display: rounded to 2 decimals as requested.
+   Display rounded to 2 decimals
 */
 function computeRating(p){
   if(!p.rounds) return { value:null, display:'—' };
@@ -310,19 +326,19 @@ function computeRating(p){
 
 /* compute KD (kills/deaths) display */
 function computeKD(p){
-  if(!p.deaths) return p.kills ? (p.kills.toFixed ? p.kills.toString() : String(p.kills)) + ' (Perfect)' : '—';
+  if(!p.deaths) return p.kills ? (p.kills.toString() + ' (Perfect)') : '—';
   const v = p.kills / p.deaths;
   return v.toFixed(2);
 }
 
-/* ---------- Ranks (thresholds as required) ---------- */
+/* ---------- Ranks (строжие пороги) ---------- */
 const RANKS = [
   { id:'unranked', name:'Unranked', cls:'unranked', min:-Infinity, max:-0.0001 },
-  { id:'silver', name:'Silver', cls:'rank-silver', min:0, max:0.79 },
-  { id:'gold', name:'Gold', cls:'rank-gold', min:0.80, max:0.94 },
-  { id:'platinum', name:'Platinum', cls:'rank-platinum', min:0.95, max:1.09 },
-  { id:'emerald', name:'Emerald', cls:'rank-emerald', min:1.10, max:1.29 },
-  { id:'global', name:'Global', cls:'rank-global', min:1.30, max:Infinity }
+  { id:'silver', name:'Silver', cls:'rank-silver', min:0.00, max:0.84 },
+  { id:'gold', name:'Gold', cls:'rank-gold', min:0.85, max:0.99 },
+  { id:'platinum', name:'Platinum', cls:'rank-platinum', min:1.00, max:1.14 },
+  { id:'emerald', name:'Emerald', cls:'rank-emerald', min:1.15, max:1.34 },
+  { id:'global', name:'Global', cls:'rank-global', min:1.35, max:Infinity }
 ];
 
 function getRankForRating(ratingValue){
@@ -338,7 +354,6 @@ function computeNominations(){
   const res = {};
   if(!players.length) return res;
 
-  // best rating, best K/D, best KRP, best single-match K, best winrate (min 3 matches), best impact sum
   let bestRating=-1, pidBestRating=null;
   let bestKD=-1, pidKD=null;
   let bestKRP=-1, pidKRP=null;
@@ -397,7 +412,7 @@ function renderList(){
     div.innerHTML = `
       <div style="min-width:0">
         <div style="display:flex;align-items:center;gap:8px">
-          <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escape(p.name)}</div>
+          <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.name)}</div>
           <div class="badge ${rank.cls}">${rank.name}</div>
         </div>
         <div class="small">K:${p.kills} A:${p.assists} D:${p.deaths} R:${p.rounds}</div>
@@ -422,16 +437,14 @@ function renderTop3(){
   const top = [...players].filter(p=> computeRating(p).value !== null).sort((a,b)=> computeRating(b).value - computeRating(a).value).slice(0,3);
   const el = document.getElementById('topList');
   if(el) el.remove();
-  // create topList below players list header if needed
   let topBox = document.createElement('div'); topBox.id = 'topList'; topBox.className = 'card'; topBox.style.marginTop='10px'; topBox.style.padding='8px'; topBox.style.display='flex'; topBox.style.gap='8px';
   top.forEach((p,i)=>{
     const r = computeRating(p).display;
     const div = document.createElement('div'); div.className='card'; div.style.padding='8px'; div.style.flex='1';
     const rank = getRankForRating(computeRating(p).value);
-    div.innerHTML = `<div style="font-weight:700">#${i+1} ${escape(p.name)} <span class="badge ${rank.cls}" style="margin-left:8px">${rank.name}</span></div><div class="small">R:${r} • K:${p.kills}</div>`;
+    div.innerHTML = `<div style="font-weight:700">#${i+1} ${escapeHtml(p.name)} <span class="badge ${rank.cls}" style="margin-left:8px">${rank.name}</span></div><div class="small">R:${r} • K:${p.kills}</div>`;
     topBox.appendChild(div);
   });
-  // place after playersList
   document.querySelector('aside.card').appendChild(topBox);
 }
 
@@ -445,7 +458,7 @@ function renderNominations(){
     const name = pid ? (players.find(p=>p.id===pid)?.name || '?') : '—';
     const row = document.createElement('div');
     row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='6px'; row.style.borderRadius='6px'; row.style.background='rgba(255,255,255,0.01)';
-    row.innerHTML = `<div class="small">${escape(key)}</div><div class="small">${escape(name)}</div>`;
+    row.innerHTML = `<div class="small">${escapeHtml(key)}</div><div class="small">${escapeHtml(name)}</div>`;
     dom.appendChild(row);
   }
 }
@@ -493,6 +506,7 @@ function updateSelectedFieldsEmpty(){
 
 /* ---------- Events: create/edit/delete ---------- */
 $('btnAdd').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Требуется админ статус для добавления — войдите как админ.');
   const name = $('inpName').value.trim();
   if(!name) return alert('Введите имя');
   const p = {
@@ -509,12 +523,12 @@ $('btnAdd').addEventListener('click', ()=>{
   };
   players.unshift(p);
   selectedId = p.id;
-  // clear form
   ['inpName','inpKills','inpAssists','inpDeaths','inpRounds','inpWins','inpLoses'].forEach(id=>$(id).value = (id==='inpName'?'':'0'));
   save();
 });
 
 $('btnAddZero').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Требуется админ статус для добавления — войдите как админ.');
   const name = $('inpName').value.trim();
   if(!name) return alert('Введите имя');
   const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt: Date.now() };
@@ -531,11 +545,16 @@ $('playersList').addEventListener('click', e=>{
   if(!btn) return;
   const id = btn.dataset.id; const act = btn.dataset.act;
   if(act === 'open') { selectedId = id; renderSelected(); renderList(); }
-  if(act === 'dup'){ const origin = players.find(p=>p.id===id); if(!origin) return; const copy = JSON.parse(JSON.stringify(origin)); copy.id = uid(); copy.name = origin.name + '_copy'; copy.createdAt = Date.now(); players.unshift(copy); save(); }
+  if(act === 'dup'){
+    if(!isAdmin()) return alert('Требуется админ статус для дублирования записи.');
+    const origin = players.find(p=>p.id===id); if(!origin) return;
+    const copy = JSON.parse(JSON.stringify(origin)); copy.id = uid(); copy.name = origin.name + '_copy'; copy.createdAt = Date.now(); players.unshift(copy); save();
+  }
 });
 
 /* delete/reset */
 $('btnDelete').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Требуется админ статус для удаления.');
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Удалить игрока?')) return;
   players = players.filter(p=>p.id !== selectedId);
@@ -543,6 +562,7 @@ $('btnDelete').addEventListener('click', ()=>{
   save();
 });
 $('btnReset').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Требуется админ статус для сброса.');
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Сбросить счётчики?')) return;
   const p = players.find(x=>x.id===selectedId);
@@ -570,12 +590,13 @@ $('closeRename').addEventListener('click', ()=> closeModal('modalRename'));
 
 /* add match modal */
 $('btnAddMatch').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Требуется админ статус для добавления матча.');
   if(!selectedId) return alert('Выберите игрока');
-  // reset inputs
   $('m_k').value = 0; $('m_a').value = 0; $('m_d').value = 0; $('m_r').value = Math.max(1, $('inpRounds').value || 10); $('m_win').checked = true;
   showModal('modalMatch');
 });
 $('saveMatch').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Требуется админ статус для добавления матча.');
   if(!selectedId) return alert('Выберите игрока');
   const k = Math.max(0, parseInt($('m_k').value)||0);
   const a = Math.max(0, parseInt($('m_a').value)||0);
@@ -585,7 +606,6 @@ $('saveMatch').addEventListener('click', ()=>{
   const p = players.find(x=>x.id===selectedId); if(!p) return;
   p.matches = p.matches || [];
   p.matches.push({ k,a,d,r,win,ts:Date.now() });
-  // aggregate totals
   p.kills = (p.kills||0) + k;
   p.assists = (p.assists||0) + a;
   p.deaths = (p.deaths||0) + d;
@@ -600,13 +620,13 @@ $('closeMatch').addEventListener('click', ()=> closeModal('modalMatch'));
 function showModal(id){ $(id).style.display = 'flex'; }
 function closeModal(id){ $(id).style.display = 'none'; }
 
-/* export/import */
-$('exportBtn').addEventListener('click', ()=>{
+/* ---------- Export / Import (header + panel) ---------- */
+function exportAllHandler(){
   const blob = new Blob([JSON.stringify({players},null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = 'tracker_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-});
-$('importBtn').addEventListener('click', ()=>{
+}
+function importAllHandler(){
   const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
   inp.onchange = async ()=> {
     const f = inp.files[0]; if(!f) return;
@@ -616,4 +636,153 @@ $('importBtn').addEventListener('click', ()=>{
       if(Array.isArray(json.players)) players = json.players;
       selectedId = players.length ? players[0].id : null;
       save(); alert('Импорт завершён');
-    }catch(e){ console.error(e); alert('Ошибка имп
+    }catch(e){ console.error(e); alert('Ошибка импорта'); }
+  };
+  inp.click();
+}
+$('exportBtn').addEventListener('click', exportAllHandler);
+$('importBtn').addEventListener('click', importAllHandler);
+$('exportAll').addEventListener('click', exportAllHandler);
+$('importAll').addEventListener('click', importAllHandler);
+
+/* clear all (admin only) */
+$('clearAll').addEventListener('click', ()=>{
+  if(!isAdmin()) return alert('Требуется админ статус для очистки данных.');
+  if(!confirm('Уничтожить все данные (локально)?')) return;
+  players = []; selectedId = null;
+  localStorage.removeItem(STORE_KEY);
+  save();
+});
+
+/* Ranks modal */
+$('btnRanks').addEventListener('click', ()=> {
+  const root = $('ranksContent'); root.innerHTML = '';
+  RANKS.forEach(r=>{
+    if(r.id === 'unranked') return;
+    const node = document.createElement('div'); node.style.padding='8px'; node.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+    const playersWith = players.filter(p=> {
+      const rv = computeRating(p).value;
+      return rv !== null && rv >= r.min && rv <= r.max;
+    }).map(p=>escapeHtml(p.name)).join(', ') || '—';
+    node.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:700">${r.name}</div><div class="small">Порог: ${r.min} — ${r.max}</div></div><div class="small" style="margin-top:6px">Как получить: рейтинг в диапазоне. Игроки: ${playersWith}</div>`;
+    root.appendChild(node);
+  });
+  showModal('modalRanks');
+});
+$('closeRanksModal').addEventListener('click', ()=> closeModal('modalRanks'));
+
+/* Nominations modal */
+$('btnNoms').addEventListener('click', ()=>{
+  const root = $('nomsContent'); root.innerHTML = '';
+  const defs = {
+    'Лучший рейтинг (тек.)':'Игрок с наивысшим рейтингом (HLTV-like).',
+    'Лучший K/D':'Наибольшее K/D.',
+    'Лучший KRP':'Лучшее K / R.',
+    'Лучший матч (киллы)':'Максимум киллов в одной записи match.',
+    'Лучший винрейт (min 3)':'Лучший W/(W+L) при минимум 3 матчах.',
+    'Highest Impact (sum)':'Наибольшая суммарная «влияния» по матчам.'
+  };
+  const noms = computeNominations();
+  for(const key in defs){
+    const pid = noms[key];
+    const name = pid ? players.find(p=>p.id===pid)?.name || '?' : '—';
+    const node = document.createElement('div'); node.style.padding='8px'; node.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+    node.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:700">${escapeHtml(key)}</div><div class="small">${escapeHtml(name)}</div></div><div class="small" style="margin-top:6px">${escapeHtml(defs[key])}</div>`;
+    root.appendChild(node);
+  }
+  showModal('modalNoms');
+});
+$('closeNomsModal').addEventListener('click', ()=> closeModal('modalNoms'));
+
+/* search/sort live */
+$('q').addEventListener('input', renderList);
+$('selSort').addEventListener('change', renderList);
+
+/* list delegation to open player on row click (not buttons) */
+document.querySelector('aside.card').addEventListener('click', e=>{
+  const row = e.target.closest('.player-row');
+  if(row && !e.target.closest('button')){
+    const name = row.querySelector('div').textContent.trim().split('\n')[0].trim();
+    const p = players.find(x=> x.name === name);
+    if(p){ selectedId = p.id; renderSelected(); renderList(); }
+  }
+});
+
+/* ---------- Admin panel (restore) ---------- */
+function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
+function setAdmin(on){
+  localStorage.setItem(ADMIN_KEY, on ? '1' : '0');
+  updateAdminUI();
+}
+function createAdminPanel(){
+  const header = document.querySelector('header');
+  if(!header) return;
+  const target = document.getElementById('headerControls') || header;
+  const wrapper = document.createElement('div');
+  wrapper.id = 'adminPanelWrapper';
+  wrapper.style.display = 'flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.gap = '8px';
+  wrapper.style.marginLeft = '12px';
+  wrapper.innerHTML = `
+    <div id="adminControls" style="display:flex;gap:8px;align-items:center">
+      <div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
+      <button id="adminLoginBtn">Войти как админ</button>
+      <button id="adminLogoutBtn" style="display:none">Выйти</button>
+    </div>
+  `;
+  target.appendChild(wrapper);
+
+  document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
+    const pw = prompt('Введите пароль администратора');
+    if(pw === null) return;
+    if(pw === ADMIN_PASSWORD){ setAdmin(true); alert('Админ включён'); }
+    else alert('Неверный пароль');
+  });
+  document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{ setAdmin(false); alert('Админ выключен'); });
+}
+
+function updateAdminUI(){
+  const admin = isAdmin();
+  const badge = document.getElementById('adminBadge');
+  const loginBtn = document.getElementById('adminLoginBtn');
+  const logoutBtn = document.getElementById('adminLogoutBtn');
+  if(badge) badge.style.display = admin ? 'inline-block' : 'none';
+  if(loginBtn) loginBtn.style.display = admin ? 'none' : 'inline-block';
+  if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none';
+
+  // IDs protected for non-admin
+  const protectedIds = [
+    'btnAdd','btnAddZero','btnClearForm',
+    'btnDelete','btnReset',
+    'btnAddMatch','saveMatch','cancelMatch',
+    'clearAll','exportAll','importAll'
+  ];
+  protectedIds.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.disabled = !admin;
+  });
+
+  // disable duplication buttons as well
+  document.querySelectorAll('#playersList button[data-act="dup"]').forEach(b=> b.disabled = !admin);
+
+  // hint for disabled elements
+  document.querySelectorAll('button').forEach(el=>{
+    if(el.disabled) el.title = 'Требуется админ статус';
+    else if(el.title === 'Требуется админ статус') el.title = '';
+  });
+}
+
+/* init admin panel */
+createAdminPanel();
+updateAdminUI();
+
+/* ---------- Init ---------- */
+load();
+if(players.length) selectedId = players[0].id;
+renderList();
+renderSelected();
+
+</script>
+</body>
+</html>
