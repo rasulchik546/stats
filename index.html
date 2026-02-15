@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Статистический трекер — K/A/D/W/L/ROUNDS — Enhanced + Ranks</title>
+<title>Статистический трекер — K/A/D/W/L/ROUNDS — HLTV-like Rating</title>
 <style>
   :root{
     --bg:#0b0b0b; --panel:#0f1113; --text:#e9eef8; --muted:#9aa3b2; --accent:#6ee7b7; --glass: rgba(255,255,255,0.03);
@@ -44,10 +44,8 @@
   .rank-emerald{background:linear-gradient(90deg,#7bf0b3,#4edc93);color:#012}
   .rank-global{background:linear-gradient(90deg,#ffd3ff,#ffb7f0);color:#111}
 
-  /* modal */
   .modal { position: fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.55); z-index:9999; }
   .modal .box { width:min(880px,96%); max-height:80vh; overflow:auto; background:var(--panel); padding:18px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); }
-  .modal .row { display:flex; gap:12px; align-items:center; justify-content:space-between; }
   .formula { font-family:monospace; font-size:13px; color:var(--muted); margin-top:6px; }
 
   @media (max-width:1100px){.wrap{grid-template-columns:1fr 360px;max-width:980px} aside:last-child{order:3} }
@@ -58,15 +56,14 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Трекер игроков — K/A/D / MATCH W/L / ROUNDS</h1>
-        <div class="small">Локально → localStorage • Ранги и номинации</div>
+        <h1>Трекер игроков — K/A/D / MATCH W/L / ROUNDS — HLTV-like</h1>
+        <div class="small">Локально → localStorage • рейтинг HLTV-like</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div class="controls">
           <button id="themeToggle">Тема</button>
           <button id="exportBtn">Экспорт</button>
           <button id="importBtn">Импорт</button>
-          <!-- Новые кнопки: Звания и Номинации -->
           <button id="ranksBtn">Звания</button>
           <button id="nomsBtn">Номинации</button>
         </div>
@@ -99,15 +96,26 @@
           <input id="deaths" type="number" min="0" value="0">
         </div>
         <div>
-          <label>ROUNDS (кол-во раундов)</label>
+          <label>ROUNDS</label>
           <input id="rounds" type="number" min="0" value="0">
         </div>
+
+        <!-- New fields -->
         <div>
-          <label>WINS (MATCH WINS — победы в матчах)</label>
+          <label>TOTAL DAMAGE</label>
+          <input id="damage" type="number" min="0" value="0" placeholder="Общий урон (ADR = damage / rounds)">
+        </div>
+        <div>
+          <label>KAST (CT %) </label>
+          <input id="kast" type="number" min="0" max="100" value="0" placeholder="в % (0-100)">
+        </div>
+
+        <div>
+          <label>WINS (MATCH)</label>
           <input id="wins" type="number" min="0" value="0">
         </div>
         <div>
-          <label>LOSES (MATCH LOSES — поражения в матчах)</label>
+          <label>LOSES (MATCH)</label>
           <input id="loses" type="number" min="0" value="0">
         </div>
       </div>
@@ -157,7 +165,6 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <div id="selRank" class="badge" style="display:none"></div>
-          <!-- Кнопка переименования игрока -->
           <button id="editName">Изм. ник</button>
           <button id="resetPlayer">Сбросить счётчики</button>
           <button id="deletePlayer" style="color:#ff7b7b">Удалить</button>
@@ -170,77 +177,72 @@
           <div class="ops">
             <button data-op="k+">+1</button><button data-op="k-">-1</button><button id="editKills">Изм.</button>
           </div>
-          <div class="formula">формула: —</div>
+          <div class="formula">K</div>
         </div>
         <div class="stat">
           <div class="small">ASSISTS</div><div id="vAssists" style="font-weight:700">—</div>
           <div class="ops">
             <button data-op="a+">+1</button><button data-op="a-">-1</button><button id="editAssists">Изм.</button>
           </div>
-          <div class="formula">формула: —</div>
+          <div class="formula">A</div>
         </div>
         <div class="stat">
           <div class="small">DEATHS</div><div id="vDeaths" style="font-weight:700">—</div>
           <div class="ops">
             <button data-op="d+">+1</button><button data-op="d-">-1</button><button id="editDeaths">Изм.</button>
           </div>
-          <div class="formula">формула: —</div>
+          <div class="formula">D</div>
         </div>
         <div class="stat">
           <div class="small">ROUNDS</div><div id="vRounds" style="font-weight:700">—</div>
           <div class="ops">
             <button data-op="r+">+1</button><button data-op="r-">-1</button><button id="editRounds">Изм.</button>
           </div>
-          <div class="formula">формула: —</div>
+          <div class="formula">R</div>
         </div>
         <div class="stat">
-          <div class="small">WINS (MATCH)</div><div id="vWins" style="font-weight:700">—</div>
-          <div class="ops">
-            <button data-op="w+">+1</button><button data-op="w-">-1</button><button id="editWins">Изм.</button>
-          </div>
-          <div class="formula">формула: —</div>
+          <div class="small">TOTAL DAMAGE</div><div id="vDamage" style="font-weight:700">—</div>
+          <div class="ops"><button id="editDamage">Изм.</button></div>
+          <div class="formula">Damage</div>
         </div>
         <div class="stat">
-          <div class="small">LOSES (MATCH)</div><div id="vLoses" style="font-weight:700">—</div>
-          <div class="ops">
-            <button data-op="l+">+1</button><button data-op="l-">-1</button><button id="editLoses">Изм.</button>
-          </div>
-          <div class="formula">формула: —</div>
+          <div class="small">KAST (CT %)</div><div id="vKast" style="font-weight:700">—</div>
+          <div class="ops"><button id="editKast">Изм.</button></div>
+          <div class="formula">KAST (%)</div>
         </div>
       </div>
 
       <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
         <div class="card" style="flex:1;min-width:220px">
-          <div class="small">KD = KILLS / DEATHS</div>
-          <div id="vKD" style="font-weight:700;margin-top:6px">—</div>
-          <div class="small" style="margin-top:6px">Если DEATHS = 0 → отображаем "Perfect" и в расчёте используем DEATHS_FOR_CALC = 1.</div>
-          <div class="formula">KD = K / D</div>
+          <div class="small">KRP = KILLS / ROUNDS</div>
+          <div id="vKRP" style="font-weight:700;margin-top:6px">—</div>
+          <div class="formula">KRP = K / R</div>
         </div>
         <div class="card" style="flex:1;min-width:220px">
-          <div class="small">KAD = (KILLS + ASSISTS) / DEATHS</div>
-          <div id="vKAD" style="font-weight:700;margin-top:6px">—</div>
-          <div class="formula">KAD = (K + A) / D</div>
+          <div class="small">DPR = DEATHS / ROUNDS</div>
+          <div id="vDPR" style="font-weight:700;margin-top:6px">—</div>
+          <div class="formula">DPR = D / R</div>
         </div>
         <div class="card" style="flex:1;min-width:220px">
-          <div class="small">AVG = KILLS / ROUNDS (убийства за раунд)</div>
-          <div id="vAVG" style="font-weight:700;margin-top:6px">—</div>
-          <div class="formula">AVG = K / R</div>
+          <div class="small">ADR = Damage / ROUNDS</div>
+          <div id="vADR" style="font-weight:700;margin-top:6px">—</div>
+          <div class="formula">ADR = Damage / R</div>
         </div>
         <div class="card" style="flex:1;min-width:220px">
-          <div class="small">SVR = (ROUNDS − DEATHS) / ROUNDS × 100% (выживаемость)</div>
-          <div id="vSVR" style="font-weight:700;margin-top:6px">—</div>
-          <div class="formula">SVR = (R − D) / R × 100%</div>
+          <div class="small">KAST (frac) = KAST% / 100</div>
+          <div id="vKASTfrac" style="font-weight:700;margin-top:6px">—</div>
+          <div class="formula">KAST_frac = KAST% / 100</div>
         </div>
         <div class="card" style="flex:1;min-width:220px">
-          <div class="small">WINRATE = WINS / (WINS + LOSES) × 100% (матч-вдох)</div>
-          <div id="vWINRATE" style="font-weight:700;margin-top:6px">—</div>
-          <div class="formula">WINRATE = W / (W + L) × 100%</div>
+          <div class="small">Impact (approx) = (K + 0.5×A) / R</div>
+          <div id="vImpact" style="font-weight:700;margin-top:6px">—</div>
+          <div class="formula">Impact ≈ (K + 0.5·A) / R</div>
         </div>
         <div class="card" style="flex:1 1 100%;min-width:220px">
-          <div class="small">RATING — комбинированный индекс (0–100)</div>
+          <div class="small">RATING (HLTV-like)</div>
           <div id="vRATING" style="font-weight:700;margin-top:6px">—</div>
-          <div class="small" style="margin-top:6px">Нормализация: KD cap 5, KAD cap 7, AVG cap 2, SVR 0–100, WINRATE 0–100. Рейтинг = среднее нормализованных метрик × 100.</div>
-          <div class="formula">RATING = mean( norm(KD), norm(KAD), norm(AVG), norm(SVR), norm(WINRATE) ) × 100</div>
+          <div class="small" style="margin-top:6px">Формула использует твои коэффициенты (KRP, DPR, KAST, Impact, ADR). Рейтинг ограничен диапазоном 0.00–2.00.</div>
+          <div class="formula">R = KRP·0.405022 − DPR·0.657678 + (KAST%/100)·0.524246 + Impact·0.02 + ADR·0.00410341</div>
         </div>
       </div>
 
@@ -263,27 +265,32 @@
 
     </main>
 
-    <!-- RIGHT: формулы и пояснения (весов больше нет) -->
+    <!-- RIGHT: пояснения по формуле и ранги -->
     <aside class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>Формулы (HLTV-like)</strong>
+        <strong>Формула и ранги (HLTV-style)</strong>
       </div>
 
       <div style="margin-top:10px" class="small">
-        Рейтинг теперь считается **без ручных весов** — одинаковый вклад каждой нормализованной метрики.
-        <div style="margin-top:8px">
-          <div><b>Нормализация:</b></div>
+        <div><b>Коэффициенты (как ты дал):</b></div>
+        <ul style="margin:6px 0 0 18px">
+          <li>KRP weight = 0.405022</li>
+          <li>DPR weight = −0.657678</li>
+          <li>KAST/100 weight = 0.524246</li>
+          <li>Impact weight = 0.02 (per round impact value)</li>
+          <li>ADR weight = 0.00410341</li>
+        </ul>
+
+        <div style="margin-top:8px"><b>Итог:</b> Rating рассчитывается точной линейной комбинацией показателей (см. блоки слева). Результат обрезается до диапазона 0.00–2.00 и выводится с двумя знаками.</div>
+
+        <div style="margin-top:12px"><b>Рекомендованные пороги рангов (HLTV-like):</b>
           <ul style="margin:6px 0 0 18px">
-            <li>K D<sub>norm</sub> = min(KD, 5) / 5</li>
-            <li>K A D<sub>norm</sub> = min(KAD, 7) / 7</li>
-            <li>AVG<sub>norm</sub> = min(AVG, 2) / 2</li>
-            <li>SVR<sub>norm</sub> = SVR(%) / 100</li>
-            <li>WINRATE<sub>norm</sub> = WINRATE (0..1)</li>
+            <li>&lt; 0.80 — Silver</li>
+            <li>0.80 — 0.95 — Gold</li>
+            <li>0.95 — 1.10 — Platinum</li>
+            <li>1.10 — 1.30 — Emerald</li>
+            <li>≥ 1.30 — Global</li>
           </ul>
-        </div>
-        <div style="margin-top:8px">
-          <div><b>Итоговая формула:</b></div>
-          <div class="formula">RATING = ((KD_norm + KAD_norm + AVG_norm + SVR_norm + WIN_norm) / 5) × 100</div>
         </div>
       </div>
 
@@ -296,10 +303,10 @@
       </div>
     </aside>
 
-    <footer>Готово: добавлены режимы переименования, модальные окна для званий и номинаций, рейтинг без весов.</footer>
+    <footer>Внедрил HLTV-like рейтинг по твоим коэффициентам + новые поля ADR и KAST. Если хочешь, могу: 1) считать KAST автоматически из матчей; 2) заменить prompt() на модалки; 3) использовать реальную метрику Impact из матчевых данных.</footer>
   </div>
 
-<!-- ==== Modals ==== -->
+<!-- Ranks/Noms modals -->
 <div id="ranksModal" class="modal"><div class="box">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
     <div><strong>Звания — детальная информация</strong><div class="small">Как получить ранги и кто их имеет</div></div>
@@ -317,122 +324,105 @@
 </div></div>
 
 <script>
-/* ========== Настройки хранения ========== */
-const STORE = 'player_stats_v3';
-
-/* Структура игрока:
-{ id, name, kills, assists, deaths, rounds, wins, loses, createdAt, matches: [ {k,a,d,r,win,timestamp} ] }
-*/
+/* Storage */
+const STORE = 'player_stats_hltv_v1';
 
 let players = [];
 let selectedId = null;
 let uiState = { theme: (document.body.getAttribute('data-theme')||'dark') };
 
-/* ---------- Утилиты ---------- */
+/* helpers */
 const $ = id => document.getElementById(id);
 function uid(){ return 'p_' + Math.random().toString(36).slice(2,9); }
 function save(){ localStorage.setItem(STORE, JSON.stringify(players)); localStorage.setItem('ui_state', JSON.stringify(uiState)); renderList(); renderSelected(); renderNominations(); }
 function load(){ try{ const r = localStorage.getItem(STORE); const u = localStorage.getItem('ui_state'); players = r ? JSON.parse(r) : []; if(u){ uiState = JSON.parse(u); document.body.setAttribute('data-theme', uiState.theme); } }catch(e){ console.error(e); players = []; } }
 
-/* ---------- Формулы (реализация — равный вклад) ---------- */
-function computeKD(p){
-  const denom = p.deaths === 0 ? 1 : p.deaths;
-  const value = denom === 0 ? 0 : p.kills / denom;
-  const display = p.deaths === 0 ? 'Perfect' : value.toFixed(2);
-  return { display, value };
+/* ====== New metrics computations ====== */
+function computeKRP(p){ // kills per round
+  if(!p.rounds) return { display:'0.00', value:0 };
+  const v = p.kills / p.rounds;
+  return { display: v.toFixed(3), value: v };
 }
-function computeKAD(p){
-  const denom = p.deaths === 0 ? 1 : p.deaths;
-  const value = denom === 0 ? 0 : (p.kills + p.assists) / denom;
-  return { display: value.toFixed(2), value };
+function computeDPR(p){ // deaths per round
+  if(!p.rounds) return { display:'0.00', value:0 };
+  const v = p.deaths / p.rounds;
+  return { display: v.toFixed(3), value: v };
 }
-function computeAVG(p){
-  if(!p.rounds) return { display: '0.00', value: 0 };
-  const value = p.kills / p.rounds;
-  return { display: value.toFixed(2), value };
+function computeADR(p){ // average damage per round
+  if(!p.rounds) return { display:'0', value:0 };
+  const v = (p.damage || 0) / p.rounds;
+  return { display: v.toFixed(1), value: v };
 }
-function computeSVR(p){
-  if(!p.rounds) return { display: '0.0%', value: 0 };
-  const surv = Math.max(0, p.rounds - p.deaths);
-  const value = (surv / p.rounds) * 100;
-  return { display: value.toFixed(1) + '%', value };
+function computeKAST_frac(p){ // KAST fraction (0..1) — using stored KAST% field
+  const k = Number(p.kast) || 0;
+  const frac = Math.max(0, Math.min(100, k)) / 100;
+  return { display: (frac*100).toFixed(1) + '%', value: frac };
 }
-function computeWINRATE(p){
-  const totalMatches = (p.wins || 0) + (p.loses || 0);
-  if(totalMatches === 0) return { display: '0.0%', value: 0 };
-  const value = p.wins / totalMatches;
-  return { display: (value*100).toFixed(1) + '%', value };
+function computeImpactApprox(p){ // approximation: (K + 0.5*A)/R
+  if(!p.rounds) return { display:'0.000', value:0 };
+  const v = (p.kills + 0.5*(p.assists||0)) / p.rounds;
+  return { display: v.toFixed(3), value: v };
 }
 
-/* Нормализаторы */
-function normKD(v){ return Math.min(v,5)/5; }
-function normKAD(v){ return Math.min(v,7)/7; }
-function normAVG(v){ return Math.min(v,2)/2; }
-function normSVR(v){ return Math.min(Math.max(v,0),100)/100; }
-function normWIN(v){ return Math.min(Math.max(v,0),1); }
-
-/* computeRATING: равный вклад нормализованных метрик -> 0..100 */
+/* HLTV-like rating using given coefficients */
 function computeRATING(p){
-  const kd = computeKD(p).value;
-  const kad = computeKAD(p).value;
-  const avg = computeAVG(p).value;
-  const svr = computeSVR(p).value;
-  const win = computeWINRATE(p).value;
+  const krp = computeKRP(p).value;
+  const dpr = computeDPR(p).value;
+  const kast_frac = computeKAST_frac(p).value;
+  const impact = computeImpactApprox(p).value;
+  const adr = computeADR(p).value;
 
-  const kd_norm = normKD(kd);
-  const kad_norm = normKAD(kad);
-  const avg_norm = normAVG(avg);
-  const svr_norm = normSVR(svr);
-  const win_norm = normWIN(win);
+  // coefficients you provided
+  const cKRP = 0.405022;
+  const cDPR = -0.657678; // negative
+  const cKAST = 0.524246; // applied to KAST fraction (0..1)
+  const cImpact = 0.02;   // per-round impact (we use approximate impact)
+  const cADR = 0.00410341;
 
-  const mean = (kd_norm + kad_norm + avg_norm + svr_norm + win_norm) / 5;
-  const score = mean * 100;
-  return { display: score.toFixed(2), value: score };
+  let r = krp * cKRP + dpr * cDPR + kast_frac * cKAST + impact * cImpact + adr * cADR;
+
+  // Clamp to realistic HLTV-like range 0..2 (prevents absurd values like 30)
+  r = Math.max(0, Math.min(r, 2.0));
+  return { display: r.toFixed(3), value: r,
+           components: { krp, dpr, kast_frac, impact, adr } };
 }
 
-/* ---------- Ранги — пороги чуть легче, смягчены на ~10% ----------- */
-/* Рекомендуемые описания (id,name,cls,threshold,how-to) */
+/* RANKS thresholds aligned with rating */
 const RANKS_INFO = [
-  { id:'silver', name:'Silver', cls:'rank-silver', min:0, max:9, how:'Базовый уровень — рейтинг < 10.' },
-  { id:'gold', name:'Gold', cls:'rank-gold', min:10, max:24, how:'Игрок с устойчивыми показателями: рейтинг от 10 до 24.' },
-  { id:'platinum', name:'Platinum', cls:'rank-platinum', min:25, max:44, how:'Опытный игрок: рейтинг от 25 до 44.' },
-  { id:'diamond', name:'Diamond', cls:'rank-diamond', min:45, max:64, how:'Высокий уровень игры: рейтинг от 45 до 64.' },
-  { id:'emerald', name:'Emerald', cls:'rank-emerald', min:65, max:79, how:'Отличные показатели: рейтинг от 65 до 79.' },
-  { id:'global', name:'Global', cls:'rank-global', min:80, max:100, how:'Топ-уровень: рейтинг ≥ 80.' }
+  { id:'silver', name:'Silver', cls:'rank-silver', min:-Infinity, max:0.79, how:'Рейтинг < 0.80' },
+  { id:'gold', name:'Gold', cls:'rank-gold', min:0.80, max:0.94, how:'0.80 ≤ рейтинг < 0.95' },
+  { id:'platinum', name:'Platinum', cls:'rank-platinum', min:0.95, max:1.09, how:'0.95 ≤ рейтинг < 1.10' },
+  { id:'emerald', name:'Emerald', cls:'rank-emerald', min:1.10, max:1.29, how:'1.10 ≤ рейтинг < 1.30' },
+  { id:'global', name:'Global', cls:'rank-global', min:1.30, max:Infinity, how:'Рейтинг ≥ 1.30' }
 ];
 
 function computeRank(p){
-  const score = computeRATING(p).value; // 0..100
-  for(const r of RANKS_INFO){
-    if(score >= r.min && score <= r.max) return { id: r.id, name: r.name, cls: r.cls };
+  const r = computeRATING(p).value;
+  for(const item of RANKS_INFO){
+    if(r >= item.min && r <= item.max) return { id:item.id, name:item.name, cls:item.cls };
   }
-  // fallback
   return { id:'silver', name:'Silver', cls:'rank-silver' };
 }
 
-/* ---------- Номинации: расширенные и описанные ---------- */
+/* Nominations (same as before) */
 function computeNominations(players){
   const res = {};
   if(!players.length) return res;
 
-  // Best Player (highest rating)
   let bestRating = -1, pidBestRating = null;
-  // Best KD
   let bestKD = -1, pidKD = null;
-  // Best AVG
   let bestAVG = -1, pidAVG = null;
-  // Highest single-match kills
   let bestSingle = -1, pidSingle = null;
-  // Best WINRATE (>=3 matches)
   let bestWinrate = -1, pidWinrate = null;
-  // Most MVP-like (highest sum of K+A - D across matches)
   let bestImpact = -Infinity, pidImpact = null;
 
   players.forEach(p=>{
     const r = computeRATING(p).value;
     if(r > bestRating){ bestRating = r; pidBestRating = p.id; }
-    const kd = computeKD(p).value; if(kd > bestKD){ bestKD = kd; pidKD = p.id; }
-    const avg = computeAVG(p).value; if(avg > bestAVG){ bestAVG = avg; pidAVG = p.id; }
+    const kd = (p.deaths===0 ? (p.kills>0 ? p.kills : 0) : p.kills / p.deaths);
+    if(kd > bestKD){ bestKD = kd; pidKD = p.id; }
+    const avg = computeKRP(p).value;
+    if(avg > bestAVG){ bestAVG = avg; pidAVG = p.id; }
 
     (p.matches||[]).forEach(m=>{
       if(m.k > bestSingle){ bestSingle = m.k; pidSingle = p.id; }
@@ -444,7 +434,6 @@ function computeNominations(players){
       if(wr > bestWinrate){ bestWinrate = wr; pidWinrate = p.id; }
     }
 
-    // impact metric: sum over matches of (k + a*0.5 - d*0.3)
     const impact = (p.matches||[]).reduce((acc,m)=> acc + (m.k + 0.5*m.a - 0.3*m.d), 0);
     if(impact > bestImpact){ bestImpact = impact; pidImpact = p.id; }
   });
@@ -458,7 +447,15 @@ function computeNominations(players){
   return res;
 }
 
-/* ---------- Рендер списка + топ + номинации ---------- */
+/* computeWINRATE helper (reused) */
+function computeWINRATE(p){
+  const totalMatches = (p.wins || 0) + (p.loses || 0);
+  if(totalMatches === 0) return { display: '0.0%', value: 0 };
+  const value = p.wins / totalMatches;
+  return { display: (value*100).toFixed(1) + '%', value };
+}
+
+/* Rendering */
 const playersList = $('playersList');
 const countEl = $('count');
 
@@ -523,7 +520,7 @@ function renderNominations(){
   }
 }
 
-/* ---------- Выбор и отображение выбранного ---------- */
+/* Selection and render selected */
 function selectPlayer(id){ selectedId = id; renderList(); renderSelected(); }
 function find(id){ return players.find(x=>x.id===id); }
 
@@ -543,14 +540,14 @@ function renderSelected(){
   $('vAssists').textContent = p.assists;
   $('vDeaths').textContent = p.deaths;
   $('vRounds').textContent = p.rounds;
-  $('vWins').textContent = p.wins;
-  $('vLoses').textContent = p.loses;
+  $('vDamage').textContent = p.damage || 0;
+  $('vKast').textContent = (p.kast||0) + '%';
 
-  $('vKD').textContent = computeKD(p).display;
-  $('vKAD').textContent = computeKAD(p).display;
-  $('vAVG').textContent = computeAVG(p).display;
-  $('vSVR').textContent = computeSVR(p).display;
-  $('vWINRATE').textContent = computeWINRATE(p).display;
+  $('vKRP').textContent = computeKRP(p).display;
+  $('vDPR').textContent = computeDPR(p).display;
+  $('vADR').textContent = computeADR(p).display;
+  $('vKASTfrac').textContent = computeKAST_frac(p).display;
+  $('vImpact').textContent = computeImpactApprox(p).display;
   $('vRATING').textContent = computeRATING(p).display;
 
   // history
@@ -563,9 +560,9 @@ function renderSelected(){
     $('historyCard').style.display = 'none';
   }
 }
-function updateStatFieldsEmpty(){ ['vKills','vAssists','vDeaths','vRounds','vWins','vLoses','vKD','vKAD','vAVG','vSVR','vWINRATE','vRATING'].forEach(id=>$(id).textContent='—'); $('selRank').style.display='none'; }
+function updateStatFieldsEmpty(){ ['vKills','vAssists','vDeaths','vRounds','vDamage','vKast','vKRP','vDPR','vADR','vKASTfrac','vImpact','vRATING'].forEach(id=>$(id).textContent='—'); $('selRank').style.display='none'; }
 
-/* ---------- Создание / изменение ---------- */
+/* Create / edit players */
 $('addBtn').onclick = ()=>{
   const name = $('name').value.trim();
   if(!name) return alert('Введите имя');
@@ -576,6 +573,8 @@ $('addBtn').onclick = ()=>{
     assists: Math.max(0, Number($('assists').value) || 0),
     deaths: Math.max(0, Number($('deaths').value) || 0),
     rounds: Math.max(0, Number($('rounds').value) || 0),
+    damage: Math.max(0, Number($('damage').value) || 0),
+    kast: Math.max(0, Math.min(100, Number($('kast').value) || 0)),
     wins: Math.max(0, Number($('wins').value) || 0),
     loses: Math.max(0, Number($('loses').value) || 0),
     matches: [],
@@ -584,18 +583,14 @@ $('addBtn').onclick = ()=>{
   players.unshift(p);
   selectedId = p.id;
   save();
-  // Сброс формы
+  // reset form
   $('name').value = '';
-  $('kills').value = 0;
-  $('assists').value = 0;
-  $('deaths').value = 0;
-  $('rounds').value = 0;
-  $('wins').value = 0;
-  $('loses').value = 0;
+  $('kills').value = 0; $('assists').value = 0; $('deaths').value = 0; $('rounds').value = 0;
+  $('damage').value = 0; $('kast').value = 0; $('wins').value = 0; $('loses').value = 0;
 };
-$('addZeroBtn').onclick = ()=>{ const name = $('name').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt:Date.now() }; players.unshift(p); selectedId=p.id; save(); $('name').value=''; };
+$('addZeroBtn').onclick = ()=>{ const name = $('name').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, damage:0, kast:0, wins:0, loses:0, matches:[], createdAt:Date.now() }; players.unshift(p); selectedId=p.id; save(); $('name').value=''; };
 
-/* Делегирование кликов по списку */
+/* list delegation */
 playersList.addEventListener('click', e=>{
   const btn = e.target.closest('button'); if(!btn) return;
   const id = btn.dataset.id; const act = btn.dataset.act;
@@ -603,7 +598,7 @@ playersList.addEventListener('click', e=>{
   if(act === 'dup'){ const p = find(id); if(!p) return; const copy = Object.assign({}, p, { id: uid(), name: p.name + '_copy', createdAt: Date.now() }); players.unshift(copy); save(); }
 });
 
-/* ---------- + / - и прямое редактирование ---------- */
+/* + / - ops */
 document.querySelectorAll('[data-op]').forEach(b=> b.addEventListener('click', ()=> applyOp(b.getAttribute('data-op')) ) );
 
 function applyOp(op){
@@ -618,30 +613,25 @@ function applyOp(op){
     case 'd-': p.deaths = Math.max(0,p.deaths-1); break;
     case 'r+': p.rounds++; break;
     case 'r-': p.rounds = Math.max(0,p.rounds-1); break;
-    case 'w+': p.wins++; break;
-    case 'w-': p.wins = Math.max(0,p.wins-1); break;
-    case 'l+': p.loses++; break;
-    case 'l-': p.loses = Math.max(0,p.loses-1); break;
   }
   save();
 }
 
-/* Прямое редактирование через prompt */
-['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
-  const el = $(id); if(!el) return;
-  el.onclick = ()=>{
-    if(!selectedId){ alert('Выбери игрока'); return; }
-    const p = find(selectedId); if(!p) return;
-    const map = { editKills:'kills', editAssists:'assists', editDeaths:'deaths', editRounds:'rounds', editWins:'wins', editLoses:'loses' };
-    const field = map[id];
-    const v = prompt('Новое значение для ' + field.toUpperCase(), p[field]);
-    if(v === null) return;
-    p[field] = Math.max(0, parseInt(v) || 0);
-    save();
-  };
+/* direct edit prompts */
+['editKills','editAssists','editDeaths','editRounds','editDamage','editKast','editWins','editLoses'].forEach(id=>{
+  const el = $(id);
+  if(!el) return;
 });
 
-/* ---------- Переименование игрока (новая фича) ---------- */
+/* edit buttons for damage & kast */
+$('editKills') && $('editKills').addEventListener('click', ()=>{ if(!selectedId) return alert('Выбери игрока'); const p=find(selectedId); const v=prompt('KILLS', p.kills); if(v!==null){ p.kills = Math.max(0,parseInt(v)||0); save(); }});
+$('editAssists') && $('editAssists').addEventListener('click', ()=>{ if(!selectedId) return alert('Выбери игрока'); const p=find(selectedId); const v=prompt('ASSISTS', p.assists); if(v!==null){ p.assists = Math.max(0,parseInt(v)||0); save(); }});
+$('editDeaths') && $('editDeaths').addEventListener('click', ()=>{ if(!selectedId) return alert('Выбери игрока'); const p=find(selectedId); const v=prompt('DEATHS', p.deaths); if(v!==null){ p.deaths = Math.max(0,parseInt(v)||0); save(); }});
+$('editRounds') && $('editRounds').addEventListener('click', ()=>{ if(!selectedId) return alert('Выбери игрока'); const p=find(selectedId); const v=prompt('ROUNDS', p.rounds); if(v!==null){ p.rounds = Math.max(0,parseInt(v)||0); save(); }});
+$('editDamage') && $('editDamage').addEventListener('click', ()=>{ if(!selectedId) return alert('Выбери игрока'); const p=find(selectedId); const v=prompt('TOTAL DAMAGE', p.damage||0); if(v!==null){ p.damage = Math.max(0,parseInt(v)||0); save(); }});
+$('editKast') && $('editKast').addEventListener('click', ()=>{ if(!selectedId) return alert('Выбери игрока'); const p=find(selectedId); const v=prompt('KAST (CT %) 0-100', p.kast||0); if(v!==null){ p.kast = Math.max(0,Math.min(100,parseFloat(v)||0)); save(); }});
+
+/* rename */
 $('editName').onclick = ()=>{
   if(!selectedId) return alert('Выбери игрока');
   const p = find(selectedId); if(!p) return;
@@ -653,7 +643,7 @@ $('editName').onclick = ()=>{
   save();
 };
 
-/* ---------- Удаление / сброс ---------- */
+/* delete/reset */
 $('deletePlayer').onclick = ()=>{
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Удалить игрока?')) return;
@@ -665,17 +655,18 @@ $('resetPlayer').onclick = ()=>{
   if(!selectedId) return alert('Нет выбранного');
   if(!confirm('Сбросить все счётчики у игрока?')) return;
   const p = find(selectedId); if(!p) return;
-  p.kills = p.assists = p.deaths = p.rounds = p.wins = p.loses = 0;
+  p.kills = p.assists = p.deaths = p.rounds = p.damage = p.wins = p.loses = 0;
+  p.kast = 0;
   p.matches = [];
   save();
 };
 
-/* ---------- Экспорт / импорт / очистка ---------- */
+/* export/import/clear */
 $('exportBtn').onclick = ()=>{
   const data = { players };
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'players_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const a = document.createElement('a'); a.href = url; a.download = 'players_hltv_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
 $('importBtn').onclick = ()=> $('importAll').click();
 $('exportAll').onclick = $('exportBtn').onclick;
@@ -689,22 +680,24 @@ $('clearAll').onclick = ()=>{
   players = []; selectedId = null; localStorage.removeItem(STORE); save();
 };
 
-/* ---------- Тема ---------- */
+/* theme */
 $('themeToggle').onclick = ()=>{ const cur = document.body.getAttribute('data-theme') || 'dark'; const next = cur === 'dark' ? 'light' : 'dark'; document.body.setAttribute('data-theme', next); uiState.theme = next; save(); };
 
-/* ---------- Добавление матча (prompt пока) ---------- */
+/* add match (keeps prompts for now; also collects damage and optionally KAST% manual) */
 $('addMatchBtn').onclick = ()=>{
   if(!selectedId) return alert('Выбери игрока');
   const k = parseInt(prompt('KILLS в матче', '0')) || 0;
   const a = parseInt(prompt('ASSISTS в матче', '0')) || 0;
   const d = parseInt(prompt('DEATHS в матче', '0')) || 0;
   const r = parseInt(prompt('ROUNDS в матче', '0')) || 0;
+  const dmg = parseInt(prompt('DAMAGE в матче', '0')) || 0;
   const win = confirm('Победа в матче? (OK = да, Отмена = нет)');
   const p = find(selectedId);
   if(!p) return;
   p.matches = p.matches || [];
-  p.matches.push({ k,a,d,r,win: !!win, timestamp: Date.now() });
-  p.kills += k; p.assists += a; p.deaths += d; p.rounds += r; if(win) p.wins++; else p.loses++;
+  p.matches.push({ k,a,d,r,dmg,win: !!win, timestamp: Date.now() });
+  // aggregate into totals: kills, assists, deaths, rounds, damage, wins/loses
+  p.kills += k; p.assists += a; p.deaths += d; p.rounds += r; p.damage = (p.damage || 0) + dmg; if(win) p.wins++; else p.loses++;
   save();
 };
 
@@ -715,10 +708,9 @@ function renderHistory(p){
   const arr = (p.matches||[]).slice(-12).reverse();
   arr.forEach(m=>{
     const el = document.createElement('div'); el.className='small'; el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='6px'; el.style.borderRadius='6px'; el.style.background='rgba(255,255,255,0.01)';
-    el.innerHTML = `<div>K:${m.k} A:${m.a} D:${m.d} R:${m.r}</div><div>${m.win? 'W':'L'} • ${new Date(m.timestamp).toLocaleString()}</div>`;
+    el.innerHTML = `<div>K:${m.k} A:${m.a} D:${m.d} R:${m.r} DMG:${m.dmg||0}</div><div>${m.win? 'W':'L'} • ${new Date(m.timestamp).toLocaleString()}</div>`;
     list.appendChild(el);
   });
-  // draw sparkline for kills
   drawSpark(p.matches||[]);
 }
 
@@ -743,22 +735,18 @@ function drawSpark(matches){
   ctx.stroke();
 }
 
-/* ---------- Модальные окна: Звания и Номинации ---------- */
+/* Ranks & Nominations modals */
 function openRanksModal(){
-  const root = $('ranksContent');
-  root.innerHTML = '';
-  // Build rank sections
+  const root = $('ranksContent'); root.innerHTML = '';
   RANKS_INFO.forEach(r=>{
     const playersWithRank = players.filter(p=> computeRank(p).id === r.id);
     const div = document.createElement('div');
-    div.style.padding = '8px';
-    div.style.borderBottom = '1px solid rgba(255,255,255,0.03)';
+    div.style.padding = '8px'; div.style.borderBottom = '1px solid rgba(255,255,255,0.03)';
     div.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="font-weight:700">${r.name} <span class="badge ${r.cls}" style="margin-left:8px">${r.name}</span></div>
-        <div class="small">порог: ${r.min} — ${r.max}</div>
+        <div class="small">${r.how}</div>
       </div>
-      <div class="small" style="margin-top:6px">${escapeHtml(r.how)}</div>
       <div class="small" style="margin-top:6px"><b>Игроки:</b> ${playersWithRank.length ? playersWithRank.map(p=>escapeHtml(p.name)).join(', ') : '—'}</div>
     `;
     root.appendChild(div);
@@ -766,25 +754,21 @@ function openRanksModal(){
   $('ranksModal').style.display = 'flex';
 }
 function closeRanksModal(){ $('ranksModal').style.display = 'none'; }
-
 function openNomsModal(){
-  const root = $('nomsContent');
-  root.innerHTML = '';
-  // describe nominations with winners
+  const root = $('nomsContent'); root.innerHTML = '';
   const defs = {
-    'Лучший рейтинг (тек.)': 'Игрок с наибольшим текущим RATING (среднее нормализованных метрик ×100).',
-    'Лучший KD (тек.)': 'Наибольший KD = KILLS / DEATHS (Perfect при D=0).',
-    'Лучший AVG (убийства/раунд)': 'Наибольшее среднее убийств за раунд (AVG).',
-    'Лучший матч (макс убийств в матче)': 'Максимум убийств в одной записи матча.',
-    'Лучший винрейт (min 3 матча)': 'Игрок с наибольшим WINRATE при условии ≥3 матчей.',
-    'Highest Impact (MVP-like)': 'Сумма (k + 0.5*a − 0.3*d) по всем матчам — приближённый показатель влияния.'
+    'Лучший рейтинг (тек.)': 'Игрок с наивысшим текущим рейтингом (HLTV-like).',
+    'Лучший KD (тек.)': 'Наибольшее соотношение K/D.',
+    'Лучший AVG (убийства/раунд)': 'Максимум K / R.',
+    'Лучший матч (макс убийств в матче)': 'Наибольшее убийств в одной записи матча.',
+    'Лучший винрейт (min 3 матча)': 'Лучшая доля побед при ≥3 матчах.',
+    'Highest Impact (MVP-like)': 'Суммарный показатель (k + 0.5·a − 0.3·d) по матчам.'
   };
   const winners = computeNominations(players);
   for(const key in defs){
     const pid = winners[key];
     const winName = pid ? (players.find(p=>p.id===pid)||{name:'?'}).name : '—';
-    const el = document.createElement('div');
-    el.style.padding='8px'; el.style.borderBottom='1px solid rgba(255,255,255,0.03)';
+    const el = document.createElement('div'); el.style.padding='8px'; el.style.borderBottom='1px solid rgba(255,255,255,0.03)';
     el.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:700">${escapeHtml(key)}</div><div class="small">${escapeHtml(winName)}</div></div><div class="small" style="margin-top:6px">${escapeHtml(defs[key])}</div>`;
     root.appendChild(el);
   }
@@ -797,108 +781,41 @@ $('nomsBtn').onclick = openNomsModal;
 $('closeRanks').onclick = closeRanksModal;
 $('closeNoms').onclick = closeNomsModal;
 
-/* ---------- Малые утилиты ---------- */
+/* small util */
 function escapeHtml(s){ return String(s).replace(/[&<>"]+/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]||m)); }
 
-/* ---------- События поиска/сортировки ---------- */
+/* search/sort events */
 $('searchInput').oninput = renderList; $('sortSelect').onchange = renderList;
 
-/* ---------- Инициализация ---------- */
+/* init */
 load();
 if(players.length && !selectedId) selectedId = players[0].id;
 renderList();
 renderSelected();
-
-// keep canvas responsive on resize
 window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId); if(p && p.matches && p.matches.length) drawSpark(p.matches); } });
 
 </script>
 
-<!-- === admin panel (сохранил, но убрал защиту с весов) === -->
+<!-- admin panel (kept) -->
 <script>
 (function(){
   const ADMIN_KEY = 'is_admin_v3';
-  const PASSWORD = '5ugaradmin'; // временно — рекомендуется перенести на сервер
-
+  const PASSWORD = '5ugaradmin';
   function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
-  function setAdmin(on){
-    localStorage.setItem(ADMIN_KEY, on ? '1' : '0');
-    updateAdminUI();
-  }
-
+  function setAdmin(on){ localStorage.setItem(ADMIN_KEY, on ? '1' : '0'); updateAdminUI(); }
   function createAdminPanel(){
-    const header = document.querySelector('header');
-    if(!header) return;
-    const wrapper = document.createElement('div');
-    wrapper.id = 'adminPanelWrapper';
-    wrapper.style.display = 'flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '8px';
-    wrapper.style.marginLeft = '12px';
-    wrapper.innerHTML = `
-      <div id="adminControls" style="display:flex;gap:8px;align-items:center">
-        <div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
-        <button id="adminLoginBtn">Войти как админ</button>
-        <button id="adminLogoutBtn" style="display:none">Выйти</button>
-      </div>
-    `;
-    const target = header.querySelector('.controls') || header;
-    target.appendChild(wrapper);
-
-    document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
-      const pw = prompt('Введите пароль администратора');
-      if(pw === null) return;
-      if(pw === PASSWORD){ setAdmin(true); alert('Админ включён'); }
-      else alert('Неверный пароль');
-    });
+    const header = document.querySelector('header'); if(!header) return;
+    const wrapper = document.createElement('div'); wrapper.id='adminPanelWrapper'; wrapper.style.display='flex'; wrapper.style.alignItems='center'; wrapper.style.gap='8px'; wrapper.style.marginLeft='12px';
+    wrapper.innerHTML = `<div id="adminControls" style="display:flex;gap:8px;align-items:center"><div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div><button id="adminLoginBtn">Войти как админ</button><button id="adminLogoutBtn" style="display:none">Выйти</button></div>`;
+    const target = header.querySelector('.controls') || header; target.appendChild(wrapper);
+    document.getElementById('adminLoginBtn').addEventListener('click', ()=>{ const pw = prompt('Введите пароль администратора'); if(pw===null) return; if(pw===PASSWORD){ setAdmin(true); alert('Админ включён'); } else alert('Неверный пароль'); });
     document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{ setAdmin(false); alert('Админ выключен'); });
   }
-
-  function updateAdminUI(){
-    const admin = isAdmin();
-    const badge = document.getElementById('adminBadge');
-    const loginBtn = document.getElementById('adminLoginBtn');
-    const logoutBtn = document.getElementById('adminLogoutBtn');
-    if(badge) badge.style.display = admin ? 'inline-block' : 'none';
-    if(loginBtn) loginBtn.style.display = admin ? 'none' : 'inline-block';
-    if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none';
-
-    const protectedIds = [
-      'deletePlayer','resetPlayer',
-      'addMatchBtn','clearHistory',
-      'clearAll','exportAll'
-    ];
-    protectedIds.forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.disabled = !admin;
-    });
-
-    document.querySelectorAll('[data-op]').forEach(b=> b.disabled = !admin);
-    ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses','editName'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.disabled = !admin;
-    });
-  }
-
-  // block click on disabled buttons
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    if(btn.disabled){
-      e.stopImmediatePropagation();
-      e.preventDefault();
-      if(!isAdmin()) {
-        console.warn('Действие заблокировано — требуется админ статус');
-      }
-    }
-  }, true);
-
-  createAdminPanel();
-  updateAdminUI();
-  window.__setAdmin = setAdmin;
+  function updateAdminUI(){ const admin = isAdmin(); const badge = document.getElementById('adminBadge'); const loginBtn = document.getElementById('adminLoginBtn'); const logoutBtn = document.getElementById('adminLogoutBtn'); if(badge) badge.style.display = admin ? 'inline-block' : 'none'; if(loginBtn) loginBtn.style.display = admin ? 'none' : 'inline-block'; if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none'; const protectedIds = ['deletePlayer','resetPlayer','addMatchBtn','clearHistory','clearAll','exportAll']; protectedIds.forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = !admin; }); document.querySelectorAll('[data-op]').forEach(b=> b.disabled = !admin); ['editKills','editAssists','editDeaths','editRounds','editDamage','editKast','editName'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = !admin; }); }
+  document.addEventListener('click', function(e){ const btn = e.target.closest('button'); if(!btn) return; if(btn.disabled){ e.stopImmediatePropagation(); e.preventDefault(); if(!isAdmin()){ console.warn('Действие заблокировано — требуется админ статус'); } } }, true);
+  createAdminPanel(); updateAdminUI(); window.__setAdmin = setAdmin;
 })();
 </script>
-<!-- === /admin panel === -->
 
 </body>
 </html>
