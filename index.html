@@ -3,27 +3,32 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Трекер — HLTV-like Rating + Stats-based Ranks</title>
+<title>Трекер — HLTV-like Rating + Статистические звания (обновл.)</title>
 <style>
   :root{
     --bg:#0b0b0b; --panel:#0f1113; --text:#e9eef8; --muted:#9aa3b2; --accent:#6ee7b7;
     --card:#141619; --radius:10px; --shadow: 0 8px 28px rgba(0,0,0,0.5);
     --glass: rgba(255,255,255,0.02);
   }
-  *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial; color:var(--text)}
+  *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:var(--text)}
   body{margin:0;background:linear-gradient(180deg,var(--bg),#07080a);min-height:100vh;padding:18px}
-  .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:320px 1fr 320px;gap:14px}
-  header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:320px 1fr 320px;gap:14px;align-items:start}
+  header{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
   h1{font-size:18px;margin:0;color:var(--accent);letter-spacing:0.2px}
   .card{background:var(--card);padding:12px;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(255,255,255,0.03)}
   label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
   input[type="text"],input[type="number"],select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)}
   button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);cursor:pointer}
   .players{display:flex;flex-direction:column;gap:8px;max-height:64vh;overflow:auto;margin-top:10px}
-  .player-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;transition:all .18s ease}
+  .player-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;transition:all .18s ease;gap:12px}
   .player-row:hover{background:var(--glass); transform:translateY(-2px)}
   .player-row.selected{outline:2px solid rgba(255,255,255,0.03);background:linear-gradient(90deg, rgba(255,255,255,0.02), transparent)}
   .player-row.top{box-shadow:0 6px 24px rgba(196,140,255,0.08);border:1px solid rgba(196,140,255,0.08)}
+  .player-row > .left { display:flex; gap:10px; align-items:center; min-width:0; flex:1 }
+  .player-row > .right { flex:0 0 220px; display:flex; flex-direction:column; align-items:flex-end; gap:8px }
+  .player-row .avatar { width:40px;height:40px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 40px }
+  .mini .meta { display:flex; flex-direction:column; gap:4px; min-width:0 }
+  .mini .meta .line { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
   .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
   .stat{background:rgba(255,255,255,0.01);padding:12px;border-radius:8px;text-align:center}
   .small{font-size:13px;color:var(--muted)}
@@ -31,7 +36,7 @@
   .muted-pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px;color:var(--muted)}
   footer{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:10px;font-size:13px}
 
-  /* rank styles (keep names but polish colors) */
+  /* rank styles */
   .rank-silver{ background: linear-gradient(90deg, #9aa3b2, #87919b); color:#0b0b0b; }
   .rank-gold{   background: linear-gradient(90deg, #d7b354, #c49f3f); color:#111; }
   .rank-platinum{background: linear-gradient(90deg,#7fd1d8,#5fbfc6); color:#022;}
@@ -40,44 +45,26 @@
   .unranked{ background: rgba(255,255,255,0.02); color:var(--muted) }
 
   /* rank progress */
-  .rank-progress{ height:8px; background: #111214; border-radius:8px; overflow:hidden; margin-top:8px; }
+  .rank-progress{ height:8px; background: #111214; border-radius:8px; overflow:hidden; margin-top:4px; width:100% }
   .rank-progress-fill{ height:100%; width:0%; transition: width .6s ease; background: linear-gradient(90deg,#6ee7b7,#4dd47a); }
 
-  /* mini-card in list */
-  .mini { display:flex; gap:10px; align-items:center; }
-  .mini .meta { display:flex; flex-direction:column; gap:4px; min-width:120px }
-  .mini .meta .line { font-size:12px; color:var(--muted) }
-
-  /* subtle badge glow */
-  .badge { box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
-
-  /* animations for rank-up (kept simple) */
-  .rank-up { animation: rankPulse .9s ease; }
-  @keyframes rankPulse {
-    0% { transform: scale(0.98); box-shadow:0 0 0 rgba(0,0,0,0); }
-    60% { transform: scale(1.02); box-shadow:0 16px 40px rgba(100,130,255,0.08); }
-    100% { transform: scale(1); box-shadow:0 6px 24px rgba(0,0,0,0.06); }
-  }
-
-  /* responsive */
-  @media (max-width:1100px){.wrap{grid-template-columns:1fr 360px;max-width:980px} aside:last-child{order:3}}
-  @media (max-width:800px){.wrap{grid-template-columns:1fr;padding:12px} header{flex-direction:column;align-items:flex-start;gap:8px} .stat-grid{grid-template-columns:repeat(2,1fr)}}
+  /* responsive tweaks */
+  @media (max-width:1100px){.wrap{grid-template-columns:1fr 360px;max-width:980px} aside:last-child{order:3} .player-row > .right{flex:0 0 180px}}
+  @media (max-width:800px){.wrap{grid-template-columns:1fr;padding:12px} header{flex-direction:column;align-items:flex-start;gap:8px} .stat-grid{grid-template-columns:repeat(2,1fr)} .player-row{flex-direction:column;align-items:stretch} .player-row > .right{align-items:flex-start}} 
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <div>
-        <h1>Трекер — HLTV-like рейтинг + Статистические звания</h1>
+        <h1>Трекер — HLTV-like Rating + Статистические звания</h1>
         <div class="small">localStorage • Рейтинг округлён до 2 знаков • Ранги — по общей статистике</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div class="controls" id="headerControls">
-          <button id="btnRanks">Звания</button>
-          <button id="btnNoms">Номинации</button>
-          <button id="exportBtn">Экспорт</button>
-          <button id="importBtn">Импорт</button>
-        </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button id="btnRanks">Звания</button>
+        <button id="btnNoms">Номинации</button>
+        <button id="exportBtn">Экспорт</button>
+        <button id="importBtn">Импорт</button>
       </div>
     </header>
 
@@ -135,7 +122,7 @@
 
     <!-- CENTER -->
     <main class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
         <div>
           <div id="selName" style="font-weight:700">Нет выбранного</div>
           <div id="selMeta" class="small">Выберите игрока слева</div>
@@ -216,87 +203,84 @@
         rating ≈ 0.60 + score × 1.10, где score ∈ [0..1].</div>
       </div>
       <hr style="margin:10px 0;border:none;height:8px">
-      <div><b>Пороги званий (по статистике)</b></div>
+      <div><b>Пороги званий (по статистике) — облегчённая середина</b></div>
       <div class="small" style="margin-top:6px;line-height:1.4">
-        Silver — 150 раундов, 120 киллов, K/D ≥ 0.85<br>
-        Gold — 400 раундов, 320 киллов, K/D ≥ 1.00, WR ≥ 48%<br>
-        Platinum — 800 раундов, 700 киллов, K/D ≥ 1.10, WR ≥ 52%, KRP ≥ 0.68<br>
-        Emerald — 1300 раундов, 1200 киллов, K/D ≥ 1.18, WR ≥ 56%, KRP ≥ 0.75<br>
-        Global — 2000 раундов, 1900 киллов, K/D ≥ 1.28, WR ≥ 60%, KRP ≥ 0.82
+        Silver — 120 раундов, 100 киллов, K/D ≥ 0.80<br>
+        Gold — 350 раундов, 300 киллов, K/D ≥ 0.95, WR ≥ 47%<br>
+        Platinum — 700 раундов, 600 киллов, K/D ≥ 1.05, WR ≥ 51%, KRP ≥ 0.66<br>
+        Emerald — 1100 раундов, 1000 киллов, K/D ≥ 1.15, WR ≥ 54%, KRP ≥ 0.72<br>
+        Global — 1600 раундов, 1400 киллов, K/D ≥ 1.25, WR ≥ 58%, KRP ≥ 0.78
       </div>
     </aside>
 
-    <footer>Готово: дизайн + статистические звания. Если хочешь — могу подстроить веса прогресса или анимацию повышения.</footer>
+    <footer>Готово: правки вёрстки + смягчённые пороги званий. Если нужно — могу ещё уменьшить ширину правого блока в списке или добавить switch «компактный/расширенный» вид.</footer>
   </div>
 
-  <!-- MODALS -->
-  <div id="modalMatch" class="modal"><div class="box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <strong>Добавить матч</strong><button id="closeMatch">✕</button>
-    </div>
-    <div style="display:grid;gap:8px">
-      <label>KILLS <input id="m_k" type="number" min="0" value="0"></label>
-      <label>ASSISTS <input id="m_a" type="number" min="0" value="0"></label>
-      <label>DEATHS <input id="m_d" type="number" min="0" value="0"></label>
-      <label>ROUNDS <input id="m_r" type="number" min="1" value="10"></label>
-      <label><input id="m_win" type="checkbox"> Победа</label>
-      <div style="display:flex;justify-content:flex-end;gap:8px">
-        <button id="cancelMatch">Отмена</button>
-        <button id="saveMatch">Добавить</button>
+  <!-- MODALS (те же что и раньше) -->
+  <div id="modalMatch" class="modal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:2000">
+    <div class="box card" style="width:420px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Добавить матч</strong><button id="closeMatch">✕</button>
+      </div>
+      <div style="display:grid;gap:8px">
+        <label>KILLS <input id="m_k" type="number" min="0" value="0"></label>
+        <label>ASSISTS <input id="m_a" type="number" min="0" value="0"></label>
+        <label>DEATHS <input id="m_d" type="number" min="0" value="0"></label>
+        <label>ROUNDS <input id="m_r" type="number" min="1" value="10"></label>
+        <label><input id="m_win" type="checkbox"> Победа</label>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button id="cancelMatch">Отмена</button>
+          <button id="saveMatch">Добавить</button>
+        </div>
       </div>
     </div>
-  </div></div>
+  </div>
 
-  <div id="modalRename" class="modal"><div class="box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <strong>Переименовать игрока</strong><button id="closeRename">✕</button>
-    </div>
-    <div style="display:grid;gap:8px">
-      <label>Новый ник <input id="newName" type="text"></label>
-      <div style="display:flex;justify-content:flex-end;gap:8px">
-        <button id="cancelRename">Отмена</button>
-        <button id="saveRename">Сохранить</button>
+  <div id="modalRename" class="modal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:2000">
+    <div class="box card" style="width:380px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Переименовать игрока</strong><button id="closeRename">✕</button>
+      </div>
+      <div style="display:grid;gap:8px">
+        <label>Новый ник <input id="newName" type="text"></label>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button id="cancelRename">Отмена</button>
+          <button id="saveRename">Сохранить</button>
+        </div>
       </div>
     </div>
-  </div></div>
+  </div>
 
-  <div id="modalRanks" class="modal"><div class="box" style="width:740px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <strong>Звания — описание и владельцы</strong><button id="closeRanksModal">✕</button>
+  <div id="modalRanks" class="modal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:2000">
+    <div class="box card" style="width:740px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Звания — описание и владельцы</strong><button id="closeRanksModal">✕</button>
+      </div>
+      <div id="ranksContent" style="max-height:60vh;overflow:auto"></div>
     </div>
-    <div id="ranksContent" style="max-height:60vh;overflow:auto"></div>
-  </div></div>
+  </div>
 
-  <div id="modalNoms" class="modal"><div class="box" style="width:740px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <strong>Номинации — текущие победители</strong><button id="closeNomsModal">✕</button>
+  <div id="modalNoms" class="modal" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:2000">
+    <div class="box card" style="width:740px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Номинации — текущие победители</strong><button id="closeNomsModal">✕</button>
+      </div>
+      <div id="nomsContent" style="max-height:60vh;overflow:auto"></div>
     </div>
-    <div id="nomsContent" style="max-height:60vh;overflow:auto"></div>
-  </div></div>
+  </div>
 
 <script>
-/* ========== Storage & state ========== */
+/* ========== State & storage (как раньше) */
 const STORE_KEY = 'tracker_v_rewrite_v1';
 const ADMIN_KEY = 'is_admin_v3';
 const ADMIN_PASSWORD = '5ugaradmin';
-
 let players = [];
 let selectedId = null;
-
 const $ = id => document.getElementById(id);
 
 /* ---------- Persistence ---------- */
-function load(){
-  try{
-    const txt = localStorage.getItem(STORE_KEY);
-    players = txt ? JSON.parse(txt) : [];
-  }catch(e){ console.error(e); players = []; }
-}
-function save(){
-  localStorage.setItem(STORE_KEY, JSON.stringify(players));
-  renderList();
-  renderSelected();
-}
+function load(){ try{ const txt = localStorage.getItem(STORE_KEY); players = txt ? JSON.parse(txt) : []; }catch(e){ console.error(e); players = []; } }
+function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(players)); renderList(); renderSelected(); }
 
 /* ---------- Utils ---------- */
 function uid(){ return 'p_' + Math.random().toString(36).slice(2,9); }
@@ -308,7 +292,7 @@ function dpr(p){ if(!p.rounds) return {value:null, display:'—'}; const v = p.d
 function impactApprox(p){ if(!p.rounds) return {value:null, display:'—'}; const v = (p.kills + 0.5*(p.assists||0)) / p.rounds; return {value:v, display:v.toFixed(3)}; }
 function normalize(v, expectedMax){ if(v === null) return 0; if(!isFinite(v)) return 0; return Math.max(0, Math.min(1, v / expectedMax)); }
 
-/* Rating (HLTV-like) - rounded to 2 decimals */
+/* Rating: rounded to 2 decimals */
 function computeRating(p){
   if(!p.rounds) return { value:null, display:'—' };
   const kr = krp(p).value;
@@ -326,17 +310,16 @@ function computeRating(p){
   return { value: rating, display: rating.toFixed(2), components:{nk,nd,ni,score} };
 }
 
-/* ---------- Ranks by total stats (requirements) ---------- */
+/* ---------- Stat-based ranks (см. смягчённые пороги) ---------- */
 const STAT_RANKS = [
   { id:'unranked', name:'Unranked', cls:'unranked', req: {} },
-  { id:'silver', name:'Silver', cls:'rank-silver', req: { rounds:150, kills:120, kd:0.85 } },
-  { id:'gold', name:'Gold', cls:'rank-gold', req: { rounds:400, kills:320, kd:1.00, winrate:0.48 } },
-  { id:'platinum', name:'Platinum', cls:'rank-platinum', req: { rounds:800, kills:700, kd:1.10, winrate:0.52, krp:0.68 } },
-  { id:'emerald', name:'Emerald', cls:'rank-emerald', req: { rounds:1300, kills:1200, kd:1.18, winrate:0.56, krp:0.75 } },
-  { id:'global', name:'Global', cls:'rank-global', req: { rounds:2000, kills:1900, kd:1.28, winrate:0.60, krp:0.82 } }
+  { id:'silver', name:'Silver', cls:'rank-silver', req: { rounds:120, kills:100, kd:0.80 } },
+  { id:'gold', name:'Gold', cls:'rank-gold', req: { rounds:350, kills:300, kd:0.95, winrate:0.47 } },
+  { id:'platinum', name:'Platinum', cls:'rank-platinum', req: { rounds:700, kills:600, kd:1.05, winrate:0.51, krp:0.66 } },
+  { id:'emerald', name:'Emerald', cls:'rank-emerald', req: { rounds:1100, kills:1000, kd:1.15, winrate:0.54, krp:0.72 } },
+  { id:'global', name:'Global', cls:'rank-global', req: { rounds:1600, kills:1400, kd:1.25, winrate:0.58, krp:0.78 } }
 ];
 
-/* Check if player meets requirements for a rank */
 function meetsRank(p, rankReq){
   if(!rankReq) return false;
   const rounds = p.rounds || 0;
@@ -348,7 +331,6 @@ function meetsRank(p, rankReq){
   const totalMatches = (wins||0) + (loses||0);
   const winrate = totalMatches ? wins / totalMatches : 0;
   const kr = rounds ? kills / rounds : 0;
-
   if('rounds' in rankReq && rounds < rankReq.rounds) return false;
   if('kills' in rankReq && kills < rankReq.kills) return false;
   if('kd' in rankReq && kd < rankReq.kd) return false;
@@ -356,24 +338,16 @@ function meetsRank(p, rankReq){
   if('krp' in rankReq && kr < rankReq.krp) return false;
   return true;
 }
-
-/* Determine player's stat-based rank and progress to next */
 function computeStatRank(p){
-  // find highest rank that he meets
   let achievedIndex = 0;
   for(let i=1;i<STAT_RANKS.length;i++){
     if(meetsRank(p, STAT_RANKS[i].req)) achievedIndex = i;
   }
   const rank = STAT_RANKS[achievedIndex];
-
-  // find next rank (if any)
   const nextIndex = Math.min(achievedIndex+1, STAT_RANKS.length-1);
   const next = STAT_RANKS[nextIndex];
-
-  // If already at top (global), progress = 100
   if(rank.id === 'global') return { rank, next: null, progress: 100 };
 
-  // compute progress towards next: average of ratios for next's required metrics
   const req = next.req || {};
   const metrics = [];
   const rounds = p.rounds || 0;
@@ -401,7 +375,6 @@ function computeStatRank(p){
 function computeNominations(){
   const res = {};
   if(!players.length) return res;
-
   let bestRating=-1, pidBestRating=null;
   let bestKD=-1, pidKD=null;
   let bestKRP=-1, pidKRP=null;
@@ -453,7 +426,6 @@ function renderList(){
 
   $('count').textContent = players.length;
 
-  // determine top player by rating for highlight
   const topByRating = [...players].filter(p=> computeRating(p).value !== null).sort((a,b)=> computeRating(b).value - computeRating(a).value)[0];
   const topId = topByRating ? topByRating.id : null;
 
@@ -465,13 +437,12 @@ function renderList(){
 
     const div = document.createElement('div');
     div.className = 'player-row' + (p.id === selectedId ? ' selected' : '') + (p.id === topId ? ' top' : '');
-    // mini layout
     div.innerHTML = `
-      <div style="min-width:0;display:flex;gap:10px;align-items:center">
-        <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);display:flex;align-items:center;justify-content:center;font-weight:700">${escapeHtml(p.name.slice(0,2).toUpperCase())}</div>
+      <div class="left">
+        <div class="avatar">${escapeHtml((p.name||'').slice(0,2).toUpperCase())}</div>
         <div class="mini">
           <div style="display:flex;gap:8px;align-items:center">
-            <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.name)}</div>
+            <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">${escapeHtml(p.name)}</div>
             <div class="badge ${rank.cls}">${rank.name}</div>
           </div>
           <div class="meta">
@@ -480,9 +451,9 @@ function renderList(){
           </div>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:160px">
+      <div class="right">
         <div class="small">${rating.value===null ? '—' : rating.display}</div>
-        <div style="width:140px;margin-top:6px" title="Прогресс до следующего ранга">
+        <div style="width:100%;margin-top:6px" title="Прогресс до следующего ранга">
           <div class="rank-progress"><div class="rank-progress-fill" style="width:${progress}%"></div></div>
           <div class="small" style="margin-top:6px;text-align:right">${progress}% до ${statRank.next ? statRank.next.name : 'макс'}</div>
         </div>
@@ -499,12 +470,8 @@ function renderList(){
   renderNominations();
 }
 
-/* top3 block */
 function renderTop3(){
-  // remove existing
-  const existing = document.getElementById('topList');
-  if(existing) existing.remove();
-
+  const existing = document.getElementById('topList'); if(existing) existing.remove();
   const top = [...players].filter(p=> computeRating(p).value !== null).sort((a,b)=> computeRating(b).value - computeRating(a).value).slice(0,3);
   if(!top.length) return;
   let topBox = document.createElement('div'); topBox.id = 'topList'; topBox.className = 'card'; topBox.style.marginTop='10px'; topBox.style.padding='8px'; topBox.style.display='flex'; topBox.style.gap='8px';
@@ -519,10 +486,8 @@ function renderTop3(){
   document.querySelector('aside.card').appendChild(topBox);
 }
 
-/* nominations list on left (summary) */
 function renderNominations(){
-  const dom = $('nominationsList');
-  if(!dom) return;
+  const dom = $('nominationsList'); if(!dom) return;
   dom.innerHTML = '';
   const noms = computeNominations();
   for(const key in noms){
@@ -535,7 +500,6 @@ function renderNominations(){
   }
 }
 
-/* Selected panel rendering */
 function renderSelected(){
   const sel = selectedId ? players.find(p=>p.id===selectedId) : null;
   if(!sel){ $('selName').textContent = 'Нет выбранного'; $('selMeta').textContent = 'Выберите игрока слева'; updateSelectedFieldsEmpty(); return; }
@@ -556,12 +520,8 @@ function renderSelected(){
   const statRank = computeStatRank(sel);
   const rank = statRank.rank;
   const progress = statRank.next ? statRank.progress : 100;
+  const selRank = $('selRank'); selRank.textContent = rank.name; selRank.className = 'badge ' + rank.cls;
 
-  const selRank = $('selRank');
-  selRank.textContent = rank.name;
-  selRank.className = 'badge ' + rank.cls;
-
-  // progress bar in selected UI
   const wrap = $('selProgressWrap');
   if(statRank.next){
     wrap.innerHTML = `<div style="font-size:12px;color:var(--muted)">${progress}% до ${statRank.next.name}</div>
@@ -570,7 +530,6 @@ function renderSelected(){
     wrap.innerHTML = `<div style="font-size:12px;color:var(--muted)">Достигнут верхний ранг</div>`;
   }
 
-  // history
   const hist = $('history'); hist.innerHTML = '';
   const arr = (sel.matches||[]).slice(-12).reverse();
   arr.forEach(m=>{
@@ -586,172 +545,87 @@ function updateSelectedFieldsEmpty(){
   ['vK','vA','vD','vR','vW','vL','vKRP','vDPR','vImpact','vRating'].forEach(id=>$(id).textContent='—');
   $('selRank').textContent = 'Unranked'; $('selRank').className='badge unranked';
   $('selProgressWrap').innerHTML = '';
-  $('history').innerHTML='';
-  $('matchCount').textContent = 'Матчей: 0';
+  $('history').innerHTML=''; $('matchCount').textContent = 'Матчей: 0';
 }
 
 /* ---------- Helpers ---------- */
 function computeWinRatePercent(p){
   const wins = p.wins || 0; const loses = p.loses || 0;
-  const t = wins + loses;
-  if(t === 0) return '—';
-  return Math.round((wins / t) * 100) + '%';
+  const t = wins + loses; if(t === 0) return '—'; return Math.round((wins / t) * 100) + '%';
 }
 
-/* ---------- Events: create/edit/delete ---------- */
-$('btnAdd').addEventListener('click', ()=>{
+/* ---------- Events: create/edit/delete (admin checks preserved) ---------- */
+function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
+function setAdmin(on){ localStorage.setItem(ADMIN_KEY, on ? '1' : '0'); updateAdminUI(); }
+function createAdminPanel(){
+  const header = document.querySelector('header'); if(!header) return;
+  const wrapper = document.createElement('div'); wrapper.style.display='flex'; wrapper.style.gap='8px'; wrapper.style.alignItems='center';
+  wrapper.innerHTML = `<div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div><button id="adminLoginBtn">Войти как админ</button><button id="adminLogoutBtn" style="display:none">Выйти</button>`;
+  header.appendChild(wrapper);
+  document.getElementById('adminLoginBtn').addEventListener('click', ()=>{ const pw = prompt('Введите пароль администратора'); if(pw === null) return; if(pw === ADMIN_PASSWORD){ setAdmin(true); alert('Админ включён'); } else alert('Неверный пароль'); });
+  document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{ setAdmin(false); alert('Админ выключен'); });
+}
+function updateAdminUI(){
+  const admin = isAdmin();
+  const badge = document.getElementById('adminBadge');
+  const loginBtn = document.getElementById('adminLoginBtn');
+  const logoutBtn = document.getElementById('adminLogoutBtn');
+  if(badge) badge.style.display = admin ? 'inline-block' : 'none';
+  if(loginBtn) loginBtn.style.display = admin ? 'none' : 'inline-block';
+  if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none';
+
+  const protectedIds = ['btnAdd','btnAddZero','btnClearForm','btnDelete','btnReset','btnAddMatch','saveMatch','cancelMatch','clearAll','exportAll','importAll'];
+  protectedIds.forEach(id=>{ const el = document.getElementById(id); if(el) el.disabled = !admin; });
+  document.querySelectorAll('#playersList button[data-act="dup"]').forEach(b=> b.disabled = !admin);
+}
+
+/* Attach events (most same as before) */
+createAdminPanel(); updateAdminUI();
+
+document.getElementById('btnAdd').addEventListener('click', ()=>{
   if(!isAdmin()) return alert('Требуется админ статус для добавления — войдите как админ.');
-  const name = $('inpName').value.trim();
-  if(!name) return alert('Введите имя');
-  const p = {
-    id: uid(),
-    name,
-    kills: Math.max(0, parseInt($('inpKills').value)||0),
-    assists: Math.max(0, parseInt($('inpAssists').value)||0),
-    deaths: Math.max(0, parseInt($('inpDeaths').value)||0),
-    rounds: Math.max(0, parseInt($('inpRounds').value)||0),
-    wins: Math.max(0, parseInt($('inpWins').value)||0),
-    loses: Math.max(0, parseInt($('inpLoses').value)||0),
-    matches: [],
-    createdAt: Date.now()
-  };
-  players.unshift(p);
-  selectedId = p.id;
-  ['inpName','inpKills','inpAssists','inpDeaths','inpRounds','inpWins','inpLoses'].forEach(id=>$(id).value = (id==='inpName'?'':'0'));
-  save();
+  const name = $('inpName').value.trim(); if(!name) return alert('Введите имя');
+  const p = { id: uid(), name, kills: Math.max(0, parseInt($('inpKills').value)||0), assists: Math.max(0, parseInt($('inpAssists').value)||0), deaths: Math.max(0, parseInt($('inpDeaths').value)||0), rounds: Math.max(0, parseInt($('inpRounds').value)||0), wins: Math.max(0, parseInt($('inpWins').value)||0), loses: Math.max(0, parseInt($('inpLoses').value)||0), matches: [], createdAt: Date.now() };
+  players.unshift(p); selectedId = p.id; ['inpName','inpKills','inpAssists','inpDeaths','inpRounds','inpWins','inpLoses'].forEach(id=>$(id).value = (id==='inpName'?'':'0')); save();
 });
+document.getElementById('btnAddZero').addEventListener('click', ()=>{ if(!isAdmin()) return alert('Требуется админ статус для добавления.'); const name = $('inpName').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt: Date.now() }; players.unshift(p); selectedId = p.id; $('inpName').value=''; save(); });
+document.getElementById('btnClearForm').addEventListener('click', ()=> { ['inpName','inpKills','inpAssists','inpDeaths','inpRounds','inpWins','inpLoses'].forEach(id=> $(id).value = id==='inpName' ? '' : '0'); });
 
-$('btnAddZero').addEventListener('click', ()=>{
-  if(!isAdmin()) return alert('Требуется админ статус для добавления.');
-  const name = $('inpName').value.trim();
-  if(!name) return alert('Введите имя');
-  const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt: Date.now() };
-  players.unshift(p); selectedId = p.id; $('inpName').value=''; save();
-});
-
-$('btnClearForm').addEventListener('click', ()=> {
-  ['inpName','inpKills','inpAssists','inpDeaths','inpRounds','inpWins','inpLoses'].forEach(id=> $(id).value = id==='inpName' ? '' : '0');
-});
-
-/* list click delegation */
-$('playersList').addEventListener('click', e=>{
-  const btn = e.target.closest('button');
-  if(!btn) return;
+document.getElementById('playersList').addEventListener('click', e=>{
+  const btn = e.target.closest('button'); if(!btn) return;
   const id = btn.dataset.id; const act = btn.dataset.act;
   if(act === 'open') { selectedId = id; renderSelected(); renderList(); }
-  if(act === 'dup'){
-    if(!isAdmin()) return alert('Требуется админ статус для дублирования записи.');
-    const origin = players.find(p=>p.id===id); if(!origin) return;
-    const copy = JSON.parse(JSON.stringify(origin)); copy.id = uid(); copy.name = origin.name + '_copy'; copy.createdAt = Date.now(); players.unshift(copy); save();
-  }
+  if(act === 'dup'){ if(!isAdmin()) return alert('Требуется админ статус для дублирования записи.'); const origin = players.find(p=>p.id===id); if(!origin) return; const copy = JSON.parse(JSON.stringify(origin)); copy.id = uid(); copy.name = origin.name + '_copy'; copy.createdAt = Date.now(); players.unshift(copy); save(); }
 });
 
-/* delete/reset */
-$('btnDelete').addEventListener('click', ()=>{
-  if(!isAdmin()) return alert('Требуется админ статус для удаления.');
-  if(!selectedId) return alert('Нет выбранного');
-  if(!confirm('Удалить игрока?')) return;
-  players = players.filter(p=>p.id !== selectedId);
-  selectedId = players.length ? players[0].id : null;
-  save();
-});
-$('btnReset').addEventListener('click', ()=>{
-  if(!isAdmin()) return alert('Требуется админ статус для сброса.');
-  if(!selectedId) return alert('Нет выбранного');
-  if(!confirm('Сбросить счётчики?')) return;
-  const p = players.find(x=>x.id===selectedId);
-  if(!p) return;
-  p.kills = p.assists = p.deaths = p.rounds = p.wins = p.loses = 0;
-  p.matches = [];
-  save();
-});
+document.getElementById('btnDelete').addEventListener('click', ()=>{ if(!isAdmin()) return alert('Требуется админ статус для удаления.'); if(!selectedId) return alert('Нет выбранного'); if(!confirm('Удалить игрока?')) return; players = players.filter(p=>p.id !== selectedId); selectedId = players.length ? players[0].id : null; save(); });
+document.getElementById('btnReset').addEventListener('click', ()=>{ if(!isAdmin()) return alert('Требуется админ статус для сброса.'); if(!selectedId) return alert('Нет выбранного'); if(!confirm('Сбросить счётчики?')) return; const p = players.find(x=>x.id===selectedId); if(!p) return; p.kills = p.assists = p.deaths = p.rounds = p.wins = p.loses = 0; p.matches = []; save(); });
 
-/* rename modal */
-$('btnRename').addEventListener('click', ()=>{
-  if(!selectedId) return alert('Выберите игрока');
-  const p = players.find(x=>x.id===selectedId);
-  if(!p) return;
-  $('newName').value = p.name;
-  showModal('modalRename');
-});
-$('saveRename').addEventListener('click', ()=>{
-  const v = $('newName').value.trim(); if(!v) return alert('Имя не может быть пустым');
-  const p = players.find(x=>x.id===selectedId); if(!p) return;
-  p.name = v; save(); closeModal('modalRename');
-});
-$('cancelRename').addEventListener('click', ()=> closeModal('modalRename'));
-$('closeRename').addEventListener('click', ()=> closeModal('modalRename'));
+document.getElementById('btnRename').addEventListener('click', ()=>{ if(!selectedId) return alert('Выберите игрока'); const p = players.find(x=>x.id===selectedId); if(!p) return; $('newName').value = p.name; showModal('modalRename'); });
+document.getElementById('saveRename').addEventListener('click', ()=>{ const v = $('newName').value.trim(); if(!v) return alert('Имя не может быть пустым'); const p = players.find(x=>x.id===selectedId); if(!p) return; p.name = v; save(); closeModal('modalRename'); });
+document.getElementById('cancelRename').addEventListener('click', ()=> closeModal('modalRename')); document.getElementById('closeRename').addEventListener('click', ()=> closeModal('modalRename'));
 
-/* add match modal */
-$('btnAddMatch').addEventListener('click', ()=>{
-  if(!isAdmin()) return alert('Требуется админ статус для добавления матча.');
-  if(!selectedId) return alert('Выберите игрока');
-  $('m_k').value = 0; $('m_a').value = 0; $('m_d').value = 0; $('m_r').value = Math.max(1, $('inpRounds').value || 10); $('m_win').checked = true;
-  showModal('modalMatch');
-});
-$('saveMatch').addEventListener('click', ()=>{
-  if(!isAdmin()) return alert('Требуется админ статус для добавления матча.');
-  if(!selectedId) return alert('Выберите игрока');
-  const k = Math.max(0, parseInt($('m_k').value)||0);
-  const a = Math.max(0, parseInt($('m_a').value)||0);
-  const d = Math.max(0, parseInt($('m_d').value)||0);
-  const r = Math.max(1, parseInt($('m_r').value)||1);
-  const win = !!$('m_win').checked;
-  const p = players.find(x=>x.id===selectedId); if(!p) return;
-  p.matches = p.matches || [];
-  p.matches.push({ k,a,d,r,win,ts:Date.now() });
-  p.kills = (p.kills||0) + k;
-  p.assists = (p.assists||0) + a;
-  p.deaths = (p.deaths||0) + d;
-  p.rounds = (p.rounds||0) + r;
-  if(win) p.wins = (p.wins||0) + 1; else p.loses = (p.loses||0) + 1;
-  save(); closeModal('modalMatch');
-});
-$('cancelMatch').addEventListener('click', ()=> closeModal('modalMatch'));
-$('closeMatch').addEventListener('click', ()=> closeModal('modalMatch'));
+document.getElementById('btnAddMatch').addEventListener('click', ()=>{ if(!isAdmin()) return alert('Требуется админ статус для добавления матча.'); if(!selectedId) return alert('Выберите игрока'); $('m_k').value = 0; $('m_a').value = 0; $('m_d').value = 0; $('m_r').value = Math.max(1, $('inpRounds').value || 10); $('m_win').checked = true; showModal('modalMatch'); });
+document.getElementById('saveMatch').addEventListener('click', ()=>{ if(!isAdmin()) return alert('Требуется админ статус для добавления матча.'); if(!selectedId) return alert('Выберите игрока'); const k = Math.max(0, parseInt($('m_k').value)||0); const a = Math.max(0, parseInt($('m_a').value)||0); const d = Math.max(0, parseInt($('m_d').value)||0); const r = Math.max(1, parseInt($('m_r').value)||1); const win = !!$('m_win').checked; const p = players.find(x=>x.id===selectedId); if(!p) return; p.matches = p.matches || []; p.matches.push({ k,a,d,r,win,ts:Date.now() }); p.kills = (p.kills||0) + k; p.assists = (p.assists||0) + a; p.deaths = (p.deaths||0) + d; p.rounds = (p.rounds||0) + r; if(win) p.wins = (p.wins||0) + 1; else p.loses = (p.loses||0) + 1; save(); closeModal('modalMatch'); });
+document.getElementById('cancelMatch').addEventListener('click', ()=> closeModal('modalMatch')); document.getElementById('closeMatch').addEventListener('click', ()=> closeModal('modalMatch'));
 
 /* modal helpers */
 function showModal(id){ $(id).style.display = 'flex'; }
 function closeModal(id){ $(id).style.display = 'none'; }
 
-/* ---------- Export / Import ---------- */
-function exportAllHandler(){
-  const blob = new Blob([JSON.stringify({players},null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'tracker_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-function importAllHandler(){
-  const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
-  inp.onchange = async ()=> {
-    const f = inp.files[0]; if(!f) return;
-    try{
-      const txt = await f.text();
-      const json = JSON.parse(txt);
-      if(Array.isArray(json.players)) players = json.players;
-      selectedId = players.length ? players[0].id : null;
-      save(); alert('Импорт завершён');
-    }catch(e){ console.error(e); alert('Ошибка импорта'); }
-  };
-  inp.click();
-}
-$('exportBtn').addEventListener('click', exportAllHandler);
-$('importBtn').addEventListener('click', importAllHandler);
-$('exportAll').addEventListener('click', exportAllHandler);
-$('importAll').addEventListener('click', importAllHandler);
+/* export/import */
+function exportAllHandler(){ const blob = new Blob([JSON.stringify({players},null,2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'tracker_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+function importAllHandler(){ const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange = async ()=> { const f = inp.files[0]; if(!f) return; try{ const txt = await f.text(); const json = JSON.parse(txt); if(Array.isArray(json.players)) players = json.players; selectedId = players.length ? players[0].id : null; save(); alert('Импорт завершён'); }catch(e){ console.error(e); alert('Ошибка импорта'); } }; inp.click(); }
+document.getElementById('exportBtn').addEventListener('click', exportAllHandler);
+document.getElementById('importBtn').addEventListener('click', importAllHandler);
+document.getElementById('exportAll').addEventListener('click', exportAllHandler);
+document.getElementById('importAll').addEventListener('click', importAllHandler);
 
-/* clear all (admin only) */
-$('clearAll').addEventListener('click', ()=>{
-  if(!isAdmin()) return alert('Требуется админ статус для очистки данных.');
-  if(!confirm('Уничтожить все данные (локально)?')) return;
-  players = []; selectedId = null;
-  localStorage.removeItem(STORE_KEY);
-  save();
-});
+document.getElementById('clearAll').addEventListener('click', ()=>{ if(!isAdmin()) return alert('Требуется админ статус для очистки данных.'); if(!confirm('Уничтожить все данные (локально)?')) return; players = []; selectedId = null; localStorage.removeItem(STORE_KEY); save(); });
 
-/* Ranks modal */
-$('btnRanks').addEventListener('click', ()=> {
+document.getElementById('btnRanks').addEventListener('click', ()=> {
   const root = $('ranksContent'); root.innerHTML = '';
-  STAT_RANKS.forEach((r, idx)=>{
+  STAT_RANKS.forEach((r)=>{
     if(r.id === 'unranked') return;
     const node = document.createElement('div'); node.style.padding='8px'; node.style.borderBottom='1px solid rgba(255,255,255,0.03)';
     const playersWith = players.filter(p=> meetsRank(p, r.req)).map(p=>escapeHtml(p.name)).join(', ') || '—';
@@ -760,10 +634,9 @@ $('btnRanks').addEventListener('click', ()=> {
   });
   showModal('modalRanks');
 });
-$('closeRanksModal').addEventListener('click', ()=> closeModal('modalRanks'));
+document.getElementById('closeRanksModal').addEventListener('click', ()=> closeModal('modalRanks'));
 
-/* Nominations modal */
-$('btnNoms').addEventListener('click', ()=>{
+document.getElementById('btnNoms').addEventListener('click', ()=> {
   const root = $('nomsContent'); root.innerHTML = '';
   const defs = {
     'Лучший рейтинг (тек.)':'Игрок с наивысшим рейтингом (HLTV-like).',
@@ -783,93 +656,29 @@ $('btnNoms').addEventListener('click', ()=>{
   }
   showModal('modalNoms');
 });
-$('closeNomsModal').addEventListener('click', ()=> closeModal('modalNoms'));
+document.getElementById('closeNomsModal').addEventListener('click', ()=> closeModal('modalNoms'));
 
 /* search/sort live */
-$('q').addEventListener('input', renderList);
-$('selSort').addEventListener('change', renderList);
+document.getElementById('q').addEventListener('input', renderList);
+document.getElementById('selSort').addEventListener('change', renderList);
 
-/* list delegation to open player on row click (not buttons) */
+/* open row by click (not on buttons) */
 document.querySelector('aside.card').addEventListener('click', e=>{
   const row = e.target.closest('.player-row');
   if(row && !e.target.closest('button')){
-    const name = row.querySelector('div').textContent.trim().split('\n')[0].trim();
+    const nameElem = row.querySelector('.mini > div[style]') || row.querySelector('.mini div');
+    if(!nameElem) return;
+    const name = nameElem.textContent.trim().split('\n')[0].trim();
     const p = players.find(x=> x.name === name);
     if(p){ selectedId = p.id; renderSelected(); renderList(); }
   }
 });
-
-/* ---------- Admin panel ---------- */
-function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
-function setAdmin(on){
-  localStorage.setItem(ADMIN_KEY, on ? '1' : '0');
-  updateAdminUI();
-}
-function createAdminPanel(){
-  const header = document.querySelector('header');
-  if(!header) return;
-  const target = document.getElementById('headerControls') || header;
-  const wrapper = document.createElement('div');
-  wrapper.id = 'adminPanelWrapper';
-  wrapper.style.display = 'flex';
-  wrapper.style.alignItems = 'center';
-  wrapper.style.gap = '8px';
-  wrapper.style.marginLeft = '12px';
-  wrapper.innerHTML = `
-    <div id="adminControls" style="display:flex;gap:8px;align-items:center">
-      <div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
-      <button id="adminLoginBtn">Войти как админ</button>
-      <button id="adminLogoutBtn" style="display:none">Выйти</button>
-    </div>
-  `;
-  target.appendChild(wrapper);
-
-  document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
-    const pw = prompt('Введите пароль администратора');
-    if(pw === null) return;
-    if(pw === ADMIN_PASSWORD){ setAdmin(true); alert('Админ включён'); }
-    else alert('Неверный пароль');
-  });
-  document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{ setAdmin(false); alert('Админ выключен'); });
-}
-
-function updateAdminUI(){
-  const admin = isAdmin();
-  const badge = document.getElementById('adminBadge');
-  const loginBtn = document.getElementById('adminLoginBtn');
-  const logoutBtn = document.getElementById('adminLogoutBtn');
-  if(badge) badge.style.display = admin ? 'inline-block' : 'none';
-  if(loginBtn) loginBtn.style.display = admin ? 'none' : 'inline-block';
-  if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none';
-
-  const protectedIds = [
-    'btnAdd','btnAddZero','btnClearForm',
-    'btnDelete','btnReset',
-    'btnAddMatch','saveMatch','cancelMatch',
-    'clearAll','exportAll','importAll'
-  ];
-  protectedIds.forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.disabled = !admin;
-  });
-
-  document.querySelectorAll('#playersList button[data-act="dup"]').forEach(b=> b.disabled = !admin);
-
-  document.querySelectorAll('button').forEach(el=>{
-    if(el.disabled) el.title = 'Требуется админ статус';
-    else if(el.title === 'Требуется админ статус') el.title = '';
-  });
-}
-
-createAdminPanel();
-updateAdminUI();
 
 /* ---------- Init ---------- */
 load();
 if(players.length) selectedId = players[0].id;
 renderList();
 renderSelected();
-
 </script>
 </body>
 </html>
