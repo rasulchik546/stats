@@ -250,7 +250,7 @@ let players = []; // array of player objects
 let selectedId = null;
 
 /* structure:
-{ id, name, kills, assists, deaths, rounds, wins, loses, matches:[{k,a,d,r,win,timestamp}], createdAt }
+{ id, name, kills, assists, deaths, rounds, wins, loses, matches:[{k,a,d,r,win,ts}], createdAt }
 */
 
 const $ = id => document.getElementById(id);
@@ -287,6 +287,7 @@ function normalize(v, expectedMax){
 /* compute rating: normalized combination -> 0.60..1.70
    weights: KRP 0.4, DPR 0.2 (applied as 1 - normDPR), IMP 0.4
    expectedMax chosen conservatively (1.5)
+   *** Display: rounded to 2 decimals as requested.
 */
 function computeRating(p){
   if(!p.rounds) return { value:null, display:'—' };
@@ -304,7 +305,7 @@ function computeRating(p){
   const base = 0.60, scale = 1.10; // score=1 -> 1.70
   let rating = base + score * scale;
   rating = Math.max(0, Math.min(2.0, rating));
-  return { value: rating, display: rating.toFixed(3), components:{nk,nd,ni,score} };
+  return { value: rating, display: rating.toFixed(2), components:{nk,nd,ni,score} };
 }
 
 /* compute KD (kills/deaths) display */
@@ -615,75 +616,4 @@ $('importBtn').addEventListener('click', ()=>{
       if(Array.isArray(json.players)) players = json.players;
       selectedId = players.length ? players[0].id : null;
       save(); alert('Импорт завершён');
-    }catch(e){ console.error(e); alert('Ошибка импорта'); }
-  };
-  inp.click();
-});
-
-/* Ranks modal */
-$('btnRanks').addEventListener('click', ()=> {
-  const root = $('ranksContent'); root.innerHTML = '';
-  RANKS.forEach(r=>{
-    if(r.id === 'unranked') return;
-    const node = document.createElement('div'); node.style.padding='8px'; node.style.borderBottom='1px solid rgba(255,255,255,0.03)';
-    const playersWith = players.filter(p=> {
-      const rv = computeRating(p).value;
-      return rv !== null && rv >= r.min && rv <= r.max;
-    }).map(p=>escape(p.name)).join(', ') || '—';
-    node.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:700">${r.name}</div><div class="small">Порог: ${r.min} — ${r.max}</div></div><div class="small" style="margin-top:6px">Как получить: рейтинг в диапазоне. Игроки: ${playersWith}</div>`;
-    root.appendChild(node);
-  });
-  showModal('modalRanks');
-});
-$('closeRanksModal').addEventListener('click', ()=> closeModal('modalRanks'));
-
-/* Nominations modal */
-$('btnNoms').addEventListener('click', ()=>{
-  const root = $('nomsContent'); root.innerHTML = '';
-  const defs = {
-    'Лучший рейтинг (тек.)':'Игрок с наивысшим рейтингом (HLTV-like).',
-    'Лучший K/D':'Наибольшее K/D.',
-    'Лучший KRP':'Лучшее K / R.',
-    'Лучший матч (киллы)':'Максимум киллов в одной записи match.',
-    'Лучший винрейт (min 3)':'Лучший W/(W+L) при минимум 3 матчах.',
-    'Highest Impact (sum)':'Наибольшая суммарная «влияния» по матчам.'
-  };
-  const noms = computeNominations();
-  for(const key in defs){
-    const pid = noms[key];
-    const name = pid ? players.find(p=>p.id===pid)?.name || '?' : '—';
-    const node = document.createElement('div'); node.style.padding='8px'; node.style.borderBottom='1px solid rgba(255,255,255,0.03)';
-    node.innerHTML = `<div style="display:flex;justify-content:space-between"><div style="font-weight:700">${escape(key)}</div><div class="small">${escape(name)}</div></div><div class="small" style="margin-top:6px">${escape(defs[key])}</div>`;
-    root.appendChild(node);
-  }
-  showModal('modalNoms');
-});
-$('closeNomsModal').addEventListener('click', ()=> closeModal('modalNoms'));
-
-/* search/sort live */
-$('q').addEventListener('input', renderList);
-$('selSort').addEventListener('change', renderList);
-
-/* list delegation to open player on row click (not buttons) */
-document.querySelector('aside.card').addEventListener('click', e=>{
-  const row = e.target.closest('.player-row');
-  if(row && !e.target.closest('button')){
-    const idx = [...document.querySelectorAll('.player-row')].indexOf(row);
-    if(idx >= 0){
-      // find corresponding filtered list and open - simpler: find by name text
-      const name = row.querySelector('div').textContent.trim().split('\n')[0].trim();
-      const p = players.find(x=> x.name === name);
-      if(p){ selectedId = p.id; renderSelected(); renderList(); }
-    }
-  }
-});
-
-/* ---------- Init ---------- */
-load();
-if(players.length) selectedId = players[0].id;
-renderList();
-renderSelected();
-
-</script>
-</body>
-</html>
+    }catch(e){ console.error(e); alert('Ошибка имп
