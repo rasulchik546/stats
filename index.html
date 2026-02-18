@@ -942,6 +942,27 @@ window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId)
 })();
 </script>
 <!-- === /admin panel === -->
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDXn6sD6c-0bR7BLbT2KKAGjkWOmTs6xmU",
+  authDomain: "stats-gamers.firebaseapp.com",
+  projectId: "stats-gamers",
+  storageBucket: "stats-gamers.firebasestorage.app",
+  messagingSenderId: "388691762335",
+  appId: "1:388691762335:web:97f384497a4d050bfa96aa",
+  measurementId: "G-MN0C5XWR01"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 </body>
 </html>
+
