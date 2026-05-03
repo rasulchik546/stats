@@ -1,968 +1,678 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Статистический трекер — K/A/D/W/L/ROUNDS — Enhanced + Ranks</title>
-<style>
-  :root{
-    --bg:#0b0b0b; --panel:#0f1113; --text:#e9eef8; --muted:#9aa3b2; --accent:#6ee7b7; --glass: rgba(255,255,255,0.03);
-    --card-shadow: 0 6px 18px rgba(0,0,0,0.45);
-    --radius:12px;
-  }
-  [data-theme="light"]{ --bg:#f6f8fa; --panel:#ffffff; --text:#0b1220; --muted:#556270; --accent:#0f766e; --glass: rgba(10,10,10,0.03); }
-  *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial}
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#07080a);color:var(--text);-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1200px;margin:18px auto;padding:16px;display:grid;grid-template-columns:320px 1fr 320px;gap:14px}
-  header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-  h1{font-size:18px;margin:0;color:var(--accent)}
-  .card{background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:14px;border-radius:var(--radius);box-shadow:var(--card-shadow);border:1px solid rgba(255,255,255,0.03)}
-  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-  input[type="text"],input[type="number"],select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);font-size:14px}
-  .players{display:flex;flex-direction:column;gap:8px;max-height:64vh;overflow:auto;margin-top:10px}
-  .player-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px}
-  .player-row:hover{background:var(--glass)}
-  .player-row.selected{outline:2px solid rgba(255,255,255,0.04);background:linear-gradient(90deg, rgba(255,255,255,0.02), transparent)}
-  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
-  .stat{background:rgba(255,255,255,0.01);padding:12px;border-radius:10px;text-align:center}
-  .ops{display:flex;gap:6px;justify-content:center;margin-top:8px}
-  .hotbar{display:flex;justify-content:space-between;align-items:center;padding:10px;margin-top:10px;border-radius:8px;background:rgba(255,255,255,0.01)}
-  button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);cursor:pointer}
-  .small{font-size:13px;color:var(--muted)}
-  footer{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:10px;font-size:13px}
-  .controls{display:flex;gap:8px;align-items:center}
-  .search{display:flex;gap:8px;margin-top:10px}
-  .flex{display:flex;gap:8px}
-  .leader{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-  canvas.spark{width:100%;height:40px;border-radius:6px;display:block}
-  .muted-pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px;color:var(--muted)}
-  .badge{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:12px}
-  .rank-silver{background:linear-gradient(90deg,#c0c0c0,#b0b0b0);color:#111}
-  .rank-gold{background:linear-gradient(90deg,#ffd27f,#f6c85f);color:#111}
-  .rank-platinum{background:linear-gradient(90deg,#cfeaf5,#9ad3e8);color:#111}
-  .rank-diamond{background:linear-gradient(90deg,#b7e0ff,#8fcfff);color:#011}
-  .rank-emerald{background:linear-gradient(90deg,#7bf0b3,#4edc93);color:#012}
-  .rank-global{background:linear-gradient(90deg,#ffd3ff,#ffb7f0);color:#111}
-  @media (max-width:1100px){.wrap{grid-template-columns:1fr 360px;max-width:980px} aside:last-child{order:3} }
-  @media (max-width:800px){.wrap{grid-template-columns:1fr;padding:12px} header{flex-direction:column;align-items:flex-start;gap:8px} .players{max-height:36vh} .stat-grid{grid-template-columns:repeat(2,1fr)} }
-  /* Сравнение */
-  .compare-metric { display: flex; justify-content: space-between; padding: 6px; border-radius: 6px; background: rgba(255,255,255,0.02); margin-bottom: 4px; }
-  .better { color: var(--accent); font-weight: 700; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stats Viewer</title>
+  <style>
+    :root {
+      --bg1: #04111f;
+      --bg2: #071d35;
+      --card: rgba(10, 20, 38, 0.72);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #eaf2ff;
+      --muted: #9bb0cc;
+      --accent: #4aa3ff;
+      --accent2: #1f6feb;
+      --black: #0a0a0a;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(74,163,255,0.28), transparent 32%),
+        radial-gradient(circle at top right, rgba(31,111,235,0.22), transparent 28%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.55), transparent 85%);
+      opacity: 0.18;
+    }
+
+    .wrap {
+      width: min(1280px, calc(100% - 28px));
+      margin: 24px auto 36px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 16px;
+    }
+
+    .panel, .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .panel {
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      animation: rise 0.6s ease both;
+    }
+
+    .panel::after {
+      content: "";
+      position: absolute;
+      inset: auto -15% -45% auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,163,255,0.18), transparent 70%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .title { display: flex; flex-direction: column; gap: 8px; }
+    .title h1 {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 42px);
+      letter-spacing: 0.2px;
+      line-height: 1.05;
+    }
+    .title p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 68ch;
+      line-height: 1.5;
+    }
+
+    .stats-mini {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .mini {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .mini .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .mini .value { font-size: 22px; font-weight: 800; margin-top: 6px; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      align-items: center;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease, background .18s ease;
+      background: linear-gradient(180deg, #111, #050505);
+      color: var(--text);
+      padding: 12px 16px;
+      min-height: 46px;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(0,0,0,.28); }
+    .btn:active { transform: translateY(0px) scale(0.99); }
+    .btn.primary { background: linear-gradient(135deg, var(--accent2), var(--accent)); }
+    .btn.ghost { background: rgba(255,255,255,0.06); }
+
+    .card {
+      padding: 18px;
+      animation: rise 0.7s ease both;
+    }
+
+    .import-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .field input {
+      width: 100%;
+      background: rgba(4, 10, 20, 0.78);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 13px 14px;
+      outline: none;
+      transition: border .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    .field input:focus {
+      border-color: rgba(74,163,255,0.7);
+      box-shadow: 0 0 0 4px rgba(74,163,255,0.12);
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .section-title h2 { margin: 0; font-size: 18px; }
+    .section-title span { color: var(--muted); font-size: 13px; }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1040px;
+      background: rgba(4, 10, 20, 0.3);
+    }
+
+    th, td {
+      padding: 14px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      color: #cfe1ff;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      background: rgba(255,255,255,0.03);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th .sort-indicator {
+      opacity: .65;
+      margin-left: 6px;
+      font-size: 11px;
+    }
+
+    tbody tr {
+      transition: background .15s ease, transform .15s ease;
+      cursor: pointer;
+    }
+    tbody tr:hover { background: rgba(74,163,255,0.07); }
+    tbody tr.selected { background: rgba(74,163,255,0.14); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.06);
+    }
+    .pill.good { color: #8ff0be; }
+    .pill.warn { color: #ffd36b; }
+    .pill.bad { color: #ff8fa4; }
+
+    .empty {
+      padding: 34px 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .detail-box {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .detail-box .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 8px;
+    }
+    .detail-box .value {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .file-input { display: none; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1100px) {
+      .hero { grid-template-columns: 1fr; }
+      .import-grid { grid-template-columns: 1fr; }
+      .search-row { grid-template-columns: 1fr; }
+      .stats-mini { grid-template-columns: 1fr; }
+      .details { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 700px) {
+      .wrap { width: min(100% - 18px, 1280px); margin-top: 12px; }
+      .panel, .card { padding: 16px; border-radius: 18px; }
+      .toolbar { gap: 8px; }
+      .btn { width: 100%; justify-content: center; }
+    }
+  </style>
 </head>
-<body data-theme="dark">
+<body>
   <div class="wrap">
-    <header>
-      <div>
-        <h1>Трекер игроков — K/A/D / MATCH W/L / ROUNDS</h1>
-        <div class="small">Локально → localStorage • Ранги и номинации добавлены</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div class="controls">
-          <button id="themeToggle">Тема</button>
-          <button id="exportBtn">Экспорт</button>
-          <button id="importBtn">Импорт</button>
+    <div class="hero">
+      <section class="panel">
+        <div class="title">
+          <h1>Stats Viewer</h1>
+          <p>Загрузи JSON-файл, сохранённый на первом сайте, и смотри статистику игроков без возможности редактирования. Доступны поиск, сортировка и просмотр данных по нику.</p>
         </div>
-      </div>
-    </header>
 
-    <!-- LEFT: форма + список -->
-    <aside class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>Создать игрока</strong>
-        <div class="small" id="count">0</div>
-      </div>
-
-      <div style="margin-top:8px">
-        <label>Имя</label>
-        <input id="name" type="text" placeholder="Никнейм">
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-        <div>
-          <label>KILLS</label>
-          <input id="kills" type="number" min="0" value="0">
-        </div>
-        <div>
-          <label>ASSISTS</label>
-          <input id="assists" type="number" min="0" value="0">
-        </div>
-        <div>
-          <label>DEATHS</label>
-          <input id="deaths" type="number" min="0" value="0">
-        </div>
-        <div>
-          <label>ROUNDS (кол-во раундов)</label>
-          <input id="rounds" type="number" min="0" value="0">
-        </div>
-        <div>
-          <label>WINS (MATCH WINS — победы в матчах)</label>
-          <input id="wins" type="number" min="0" value="0">
-        </div>
-        <div>
-          <label>LOSES (MATCH LOSES — поражения в матчах)</label>
-          <input id="loses" type="number" min="0" value="0">
-        </div>
-      </div>
-
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button id="addBtn">Добавить</button>
-        <button id="addZeroBtn">Добавить (с 0)</button>
-        <button id="clearForm">Сброс</button>
-      </div>
-
-      <hr style="margin:10px 0;border:none;height:8px">
-
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>Поиск / Сорт</strong>
-        <div class="small">клики: открыть / дублировать</div>
-      </div>
-
-      <div class="search">
-        <input id="searchInput" type="text" placeholder="Поиск по имени...">
-        <select id="sortSelect" title="Сортировать">
-          <option value="created">Сначала новые</option>
-          <option value="rating">По рейтингу</option>
-          <option value="kills">По киллам</option>
-          <option value="wins">По победам</option>
-        </select>
-      </div>
-
-      <div class="players" id="playersList"></div>
-
-      <div class="leader card" style="margin-top:10px">
-        <div class="small">Топ 3 (по рейтингу)</div>
-        <div id="topList" style="display:flex;gap:8px"></div>
-      </div>
-
-      <div class="card" style="margin-top:10px">
-        <div class="small"><strong>Номинации (кто что уничтжал)</strong></div>
-        <div id="nominationsList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px"></div>
-      </div>
-    </aside>
-
-    <!-- CENTER: детали выбранного + сравнение -->
-    <main class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div id="selName" style="font-weight:700">Нет выбранного игрока</div>
-          <button id="renamePlayer" title="Переименовать" style="padding:4px 8px;">✏️</button>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div id="selRank" class="badge" style="display:none"></div>
-          <button id="resetPlayer">Сбросить счётчики</button>
-          <button id="deletePlayer" style="color:#ff7b7b">Удалить</button>
-        </div>
-      </div>
-      <div id="selInfo" class="small" style="margin-bottom:10px;">Выберите игрока слева</div>
-
-      <div class="stat-grid" id="statGrid">
-        <div class="stat">
-          <div class="small">KILLS</div><div id="vKills" style="font-weight:700">—</div>
-          <div class="ops">
-            <button data-op="k+">+1</button><button data-op="k-">-1</button><button id="editKills">Изм.</button>
+        <div class="stats-mini">
+          <div class="mini">
+            <div class="label">Игроков</div>
+            <div class="value" id="countPlayers">0</div>
+          </div>
+          <div class="mini">
+            <div class="label">Лучший KD</div>
+            <div class="value" id="bestKd">0.00</div>
+          </div>
+          <div class="mini">
+            <div class="label">Средний WINRATE</div>
+            <div class="value" id="avgWinrate">0.0%</div>
           </div>
         </div>
-        <div class="stat">
-          <div class="small">ASSISTS</div><div id="vAssists" style="font-weight:700">—</div>
-          <div class="ops">
-            <button data-op="a+">+1</button><button data-op="a-">-1</button><button id="editAssists">Изм.</button>
+
+        <div class="toolbar">
+          <button class="btn primary" id="importBtn">Загрузить JSON</button>
+          <button class="btn ghost" id="clearBtn">Очистить загрузку</button>
+          <input class="file-input" type="file" id="fileInput" accept="application/json" />
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>Поиск игрока</h2>
+          <span>Фильтр по нику</span>
+        </div>
+
+        <div class="search-row">
+          <div class="field">
+            <label for="searchInput">Никнейм</label>
+            <input id="searchInput" type="text" placeholder="Введите ник..." autocomplete="off" />
+          </div>
+          <button class="btn primary" id="resetSortBtn" type="button">Сброс сортировки</button>
+        </div>
+
+        <div class="card" style="padding: 0; background: transparent; border: 0; box-shadow: none;">
+          <div class="section-title" style="margin-bottom: 10px;">
+            <h2 style="font-size: 16px;">Выбранный игрок</h2>
+            <span id="selectedHint">Кликни по строке таблицы</span>
+          </div>
+          <div class="details">
+            <div class="detail-box">
+              <div class="label">Ник</div>
+              <div class="value" id="selNick">—</div>
+            </div>
+            <div class="detail-box">
+              <div class="label">KD / KAD</div>
+              <div class="value" id="selKdKad">—</div>
+            </div>
+            <div class="detail-box">
+              <div class="label">Килы / Смерти</div>
+              <div class="value" id="selKillsDeaths">—</div>
+            </div>
+            <div class="detail-box">
+              <div class="label">Победы / Поражения</div>
+              <div class="value" id="selWinsLosses">—</div>
+            </div>
           </div>
         </div>
-        <div class="stat">
-          <div class="small">DEATHS</div><div id="vDeaths" style="font-weight:700">—</div>
-          <div class="ops">
-            <button data-op="d+">+1</button><button data-op="d-">-1</button><button id="editDeaths">Изм.</button>
-          </div>
-        </div>
-        <div class="stat">
-          <div class="small">ROUNDS</div><div id="vRounds" style="font-weight:700">—</div>
-          <div class="ops">
-            <button data-op="r+">+1</button><button data-op="r-">-1</button><button id="editRounds">Изм.</button>
-          </div>
-        </div>
-        <div class="stat">
-          <div class="small">WINS (MATCH)</div><div id="vWins" style="font-weight:700">—</div>
-          <div class="ops">
-            <button data-op="w+">+1</button><button data-op="w-">-1</button><button id="editWins">Изм.</button>
-          </div>
-        </div>
-        <div class="stat">
-          <div class="small">LOSES (MATCH)</div><div id="vLoses" style="font-weight:700">—</div>
-          <div class="ops">
-            <button data-op="l+">+1</button><button data-op="l-">-1</button><button id="editLoses">Изм.</button>
-          </div>
-        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Статистика игроков</h2>
+        <span id="statusText">Файл не загружен</span>
       </div>
 
-      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
-        <div class="card" style="flex:1;min-width:220px">
-          <div class="small">KD = KILLS / DEATHS</div>
-          <div id="vKD" style="font-weight:700;margin-top:6px">—</div>
-          <div class="small" style="margin-top:6px">Если DEATHS = 0 → отображаем "Perfect" и в расчёте используем DEATHS_FOR_CALC = 1.</div>
-        </div>
-        <div class="card" style="flex:1;min-width:220px">
-          <div class="small">KAD = (KILLS + ASSISTS) / DEATHS</div>
-          <div id="vKAD" style="font-weight:700;margin-top:6px">—</div>
-        </div>
-        <div class="card" style="flex:1;min-width:220px">
-          <div class="small">AVG = KILLS / ROUNDS (убийства за раунд)</div>
-          <div id="vAVG" style="font-weight:700;margin-top:6px">—</div>
-        </div>
-        <div class="card" style="flex:1;min-width:220px">
-          <div class="small">SVR = (ROUNDS − DEATHS) / ROUNDS × 100% (выживаемость)</div>
-          <div id="vSVR" style="font-weight:700;margin-top:6px">—</div>
-        </div>
-        <div class="card" style="flex:1;min-width:220px">
-          <div class="small">WINRATE = WINS / (WINS + LOSES) × 100% (матч-вдох)</div>
-          <div id="vWINRATE" style="font-weight:700;margin-top:6px">—</div>
-        </div>
-        <div class="card" style="flex:1 1 100%;min-width:220px">
-          <div class="small">RATING — комбинированный индекс (0–100)</div>
-          <div id="vRATING" style="font-weight:700;margin-top:6px">—</div>
-          <div class="small" style="margin-top:6px">Нормализация: KD cap 5, KAD cap 7, AVG cap 2, SVR 0–100, WINRATE 0–100.</div>
-        </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr id="headerRow">
+              <th data-sort="nickname">Ник <span class="sort-indicator" id="ind-nickname"></span></th>
+              <th data-sort="kills">Килы <span class="sort-indicator" id="ind-kills"></span></th>
+              <th data-sort="deaths">Смерти <span class="sort-indicator" id="ind-deaths"></span></th>
+              <th data-sort="assists">Ассисты <span class="sort-indicator" id="ind-assists"></span></th>
+              <th data-sort="wins">Победы <span class="sort-indicator" id="ind-wins"></span></th>
+              <th data-sort="losses">Поражения <span class="sort-indicator" id="ind-losses"></span></th>
+              <th data-sort="kd">KD <span class="sort-indicator" id="ind-kd"></span></th>
+              <th data-sort="kad">KAD <span class="sort-indicator" id="ind-kad"></span></th>
+              <th data-sort="winrate">WINRATE <span class="sort-indicator" id="ind-winrate"></span></th>
+            </tr>
+          </thead>
+          <tbody id="playersTbody"></tbody>
+        </table>
+        <div id="emptyState" class="empty">Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл с первого сайта.</div>
       </div>
-
-      <div class="hotbar" style="margin-top:12px">
-        <div class="small">Hotbar: +1/−1 — быстрые изменения; "Изм." — прямое значение; всё сохраняется автоматически.</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button id="addMatchBtn">Добавить матч</button>
-          <div class="muted-pill" id="matchCount">Матчей: 0</div>
-        </div>
-      </div>
-
-      <div id="historyCard" class="card" style="margin-top:12px;display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="small">История матчей (последние 12)</div>
-          <div class="small"><button id="clearHistory">Очистить историю</button></div>
-        </div>
-        <canvas id="spark" class="spark"></canvas>
-        <div id="historyList" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;max-height:160px;overflow:auto"></div>
-      </div>
-
-      <!-- НОВЫЙ БЛОК: Сравнение игроков -->
-      <div class="card" id="compareCard" style="margin-top:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="small"><strong>⚔️ Сравнение игроков</strong></div>
-          <button id="compareBtn">Сравнить</button>
-        </div>
-        <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
-          <select id="comparePlayer1" style="flex:1;"></select>
-          <select id="comparePlayer2" style="flex:1;"></select>
-        </div>
-        <div id="compareResult" style="margin-top:12px;"></div>
-      </div>
-    </main>
-
-    <!-- RIGHT: веса и пояснения + НОВЫЙ БЛОК: Звания -->
-    <aside class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>Параметры рейтинга</strong>
-        <button id="resetWeights">Сброс</button>
-      </div>
-
-      <div style="margin-top:10px">
-        <label>Вес KD</label>
-        <input id="wKD" type="range" min="0" max="100" value="30">
-      </div>
-      <div style="margin-top:10px">
-        <label>Вес KAD</label>
-        <input id="wKAD" type="range" min="0" max="100" value="25">
-      </div>
-      <div style="margin-top:10px">
-        <label>Вес AVG</label>
-        <input id="wAVG" type="range" min="0" max="100" value="20">
-      </div>
-      <div style="margin-top:10px">
-        <label>Вес SVR</label>
-        <input id="wSVR" type="range" min="0" max="100" value="10">
-      </div>
-      <div style="margin-top:10px">
-        <label>Вес WINRATE</label>
-        <input id="wWIN" type="range" min="0" max="100" value="15">
-      </div>
-
-      <hr style="margin:10px 0;border:none;height:8px">
-
-      <!-- НОВЫЙ БЛОК: Звания (описание) -->
-      <div class="card" style="margin-top:0;padding:10px;">
-        <div class="small"><strong>🏆 Звания (ранги)</strong></div>
-        <div style="margin-top:8px; font-size:13px; display:flex; flex-direction:column; gap:6px;">
-          <div><span class="badge rank-silver">🥈 Silver</span> 0–19%</div>
-          <div><span class="badge rank-gold">🥇 Gold</span> 20–34%</div>
-          <div><span class="badge rank-platinum">⚪ Platinum</span> 35–54%</div>
-          <div><span class="badge rank-diamond">💎 Diamond</span> 55–74%</div>
-          <div><span class="badge rank-emerald">🟢 Emerald</span> 75–89%</div>
-          <div><span class="badge rank-global">🌍 Global</span> 90–100%</div>
-        </div>
-        <div class="small" style="margin-top:8px;">* ранг считается на основе KD, KAD, AVG, SVR (без учёта винрейта)</div>
-      </div>
-
-      <hr style="margin:8px 0;border:none;height:8px">
-
-      <div class="small">
-        <strong>Формулы (точно реализовано в коде):</strong>
-        <ol>
-          <li><b>K D</b> = KILLS / DEATHS. Если DEATHS = 0 → отображаем "Perfect" и для расчёта берём DEATHS_FOR_CALC = 1.</li>
-          <li><b>K A D</b> = (KILLS + ASSISTS) / DEATHS (DEATHS_FOR_CALC = 1 при DEATHS = 0).</li>
-          <li><b>AVG</b> = KILLS / ROUNDS (если ROUNDS = 0 → AVG = 0).</li>
-          <li><b>SVR</b> = (ROUNDS − DEATHS) / ROUNDS × 100% (если ROUNDS = 0 → SVR = 0%).</li>
-          <li><b>WINRATE</b> = WINS / (WINS + LOSES) × 100% (если WINS+LOSES = 0 → WINRATE = 0%).</li>
-          <li><b>RATING</b> = взвешенная сумма нормализованных метрик × 100 (см. реализацию в коде).</li>
-        </ol>
-      </div>
-
-      <hr style="margin:8px 0;border:none;height:8px">
-
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button id="exportAll">Экспорт JSON</button>
-        <button id="importAll">Импорт JSON</button>
-        <button id="clearAll" style="color:#ff7b7b">Очистить всё</button>
-      </div>
-    </aside>
-
-    <footer>Готово: добавлены номинации, ранги, переименование, сравнение и смайлики.</footer>
+      <div class="note">Сайт только для просмотра: добавление, изменение и удаление отключены. Поддерживается импорт массива игроков в JSON-формате.</div>
+    </section>
   </div>
 
-<script>
-/* ========== Настройки хранения ========== */
-const STORE = 'player_stats_v3';
-const STORE_WEIGHTS = 'player_weights_v3';
+  <script>
+    const els = {
+      importBtn: document.getElementById('importBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      fileInput: document.getElementById('fileInput'),
+      searchInput: document.getElementById('searchInput'),
+      resetSortBtn: document.getElementById('resetSortBtn'),
+      tbody: document.getElementById('playersTbody'),
+      empty: document.getElementById('emptyState'),
+      countPlayers: document.getElementById('countPlayers'),
+      bestKd: document.getElementById('bestKd'),
+      avgWinrate: document.getElementById('avgWinrate'),
+      statusText: document.getElementById('statusText'),
+      selNick: document.getElementById('selNick'),
+      selKdKad: document.getElementById('selKdKad'),
+      selKillsDeaths: document.getElementById('selKillsDeaths'),
+      selWinsLosses: document.getElementById('selWinsLosses'),
+      selectedHint: document.getElementById('selectedHint')
+    };
 
-/* Структура игрока:
-{ id, name, kills, assists, deaths, rounds, wins, loses, createdAt, matches: [ {k,a,d,r,win,timestamp} ] }
-WINS / LOSES = матчи (match wins / match loses)
-*/
+    const sortIndicators = {
+      nickname: document.getElementById('ind-nickname'),
+      kills: document.getElementById('ind-kills'),
+      deaths: document.getElementById('ind-deaths'),
+      assists: document.getElementById('ind-assists'),
+      wins: document.getElementById('ind-wins'),
+      losses: document.getElementById('ind-losses'),
+      kd: document.getElementById('ind-kd'),
+      kad: document.getElementById('ind-kad'),
+      winrate: document.getElementById('ind-winrate')
+    };
 
-let players = [];
-let selectedId = null;
-let weights = { kd:30, kad:25, avg:20, svr:10, win:15 };
-let uiState = { theme: (document.body.getAttribute('data-theme')||'dark') };
+    let players = [];
+    let filtered = [];
+    let selectedNickname = null;
+    let sortKey = 'kills';
+    let sortDir = 'desc';
 
-/* ---------- Утилиты ---------- */
-const $ = id => document.getElementById(id);
-function uid(){ return 'p_' + Math.random().toString(36).slice(2,9); }
-function save(){ 
-  localStorage.setItem(STORE, JSON.stringify(players)); 
-  localStorage.setItem(STORE_WEIGHTS, JSON.stringify(weights)); 
-  localStorage.setItem('ui_state', JSON.stringify(uiState)); 
-  renderList(); 
-  renderSelected(); 
-  renderNominations();
-  populateCompareSelects(); // обновить списки сравнения
-}
-function load(){ try{ const r = localStorage.getItem(STORE); const w = localStorage.getItem(STORE_WEIGHTS); const u = localStorage.getItem('ui_state'); players = r ? JSON.parse(r) : []; weights = w ? JSON.parse(w) : weights; if(u){ uiState = JSON.parse(u); document.body.setAttribute('data-theme', uiState.theme); } }catch(e){ console.error(e); players = []; } }
-
-/* ---------- Формулы (реализация точно как в описании) ---------- */
-function computeKD(p){
-  const denom = p.deaths === 0 ? 1 : p.deaths;
-  const value = denom === 0 ? 0 : p.kills / denom;
-  const display = p.deaths === 0 ? 'Perfect' : value.toFixed(2);
-  return { display, value };
-}
-function computeKAD(p){
-  const denom = p.deaths === 0 ? 1 : p.deaths;
-  const value = denom === 0 ? 0 : (p.kills + p.assists) / denom;
-  return { display: value.toFixed(2), value };
-}
-function computeAVG(p){
-  if(!p.rounds) return { display: '0.00', value: 0 };
-  const value = p.kills / p.rounds;
-  return { display: value.toFixed(2), value };
-}
-function computeSVR(p){
-  if(!p.rounds) return { display: '0.0%', value: 0 };
-  const surv = Math.max(0, p.rounds - p.deaths);
-  const value = (surv / p.rounds) * 100;
-  return { display: value.toFixed(1) + '%', value };
-}
-function computeWINRATE(p){
-  const totalMatches = (p.wins || 0) + (p.loses || 0);
-  if(totalMatches === 0) return { display: '0.0%', value: 0 };
-  const value = p.wins / totalMatches;
-  return { display: (value*100).toFixed(1) + '%', value };
-}
-function computeRATING(p){
-  const kd = computeKD(p).value;
-  const kad = computeKAD(p).value;
-  const avg = computeAVG(p).value;
-  const svr = computeSVR(p).value;
-  const win = computeWINRATE(p).value;
-
-  const kd_norm = Math.min(kd, 5) / 5;
-  const kad_norm = Math.min(kad, 7) / 7;
-  const avg_norm = Math.min(avg, 2) / 2;
-  const svr_norm = Math.min(Math.max(svr, 0), 100) / 100;
-  const win_norm = Math.min(Math.max(win, 0), 1);
-
-  const sumW = (weights.kd + weights.kad + weights.avg + weights.svr + weights.win) || 1;
-  const score = (weights.kd*kd_norm + weights.kad*kad_norm + weights.avg*avg_norm + weights.svr*svr_norm + weights.win*win_norm) / sumW;
-
-  // Сохраняем поведение — finalRating = score * 2 (как в оригинале). Не ломаем логику.
-  const finalRating = score * 2;
-  return { display: finalRating.toFixed(2), value: finalRating };
-}
-
-/* ---------- РАНГИ + ЭМОДЗИ ---------- */
-function computeRankScore(p){
-  const kd_norm = Math.min(computeKD(p).value, 5) / 5;
-  const kad_norm = Math.min(computeKAD(p).value, 7) / 7;
-  const avg_norm = Math.min(computeAVG(p).value, 2) / 2;
-  const svr_norm = Math.min(Math.max(computeSVR(p).value, 0), 100) / 100;
-
-  const sumW = (weights.kd + weights.kad + weights.avg + weights.svr) || 1;
-  const score = (weights.kd*kd_norm + weights.kad*kad_norm + weights.avg*avg_norm + weights.svr*svr_norm) / sumW;
-  return Math.round(score * 100);
-}
-
-function computeRank(p){
-  const s = computeRankScore(p);
-  if(s >= 90) return { id: 'global', name: 'Global', emoji: '🌍', cls: 'rank-global' };
-  if(s >= 75) return { id: 'emerald', name: 'Emerald', emoji: '🟢', cls: 'rank-emerald' };
-  if(s >= 55) return { id: 'diamond', name: 'Diamond', emoji: '💎', cls: 'rank-diamond' };
-  if(s >= 35) return { id: 'platinum', name: 'Platinum', emoji: '⚪', cls: 'rank-platinum' };
-  if(s >= 20) return { id: 'gold', name: 'Gold', emoji: '🥇', cls: 'rank-gold' };
-  return { id: 'silver', name: 'Silver', emoji: '🥈', cls: 'rank-silver' };
-}
-
-/* ---------- Номинации ---------- */
-function computeNominations(players){
-  const res = {};
-  if(!players.length) return res;
-  let maxKills = -1, pidKills = null;
-  let bestKD = -1, pidKD = null;
-  let bestAVG = -1, pidAVG = null;
-  let bestSingle = -1, pidSingle = null;
-  let bestCons = Infinity, pidCons = null;
-  let bestClutch = -1, pidClutch = null;
-
-  players.forEach(p =>{
-    if((p.kills||0) > maxKills){ maxKills = p.kills; pidKills = p.id; }
-    const kd = computeKD(p).value; if(kd > bestKD){ bestKD = kd; pidKD = p.id; }
-    const avg = computeAVG(p).value; if(avg > bestAVG){ bestAVG = avg; pidAVG = p.id; }
-
-    const matches = p.matches || [];
-    matches.forEach(m=>{ if(m.k > bestSingle){ bestSingle = m.k; pidSingle = p.id; } });
-
-    if(matches.length >= 3){
-      const arr = matches.map(m=>m.k);
-      const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
-      const variance = arr.reduce((a,b)=>a + Math.pow(b-mean,2),0)/arr.length;
-      const std = Math.sqrt(variance);
-      if(std < bestCons){ bestCons = std; pidCons = p.id; }
+    function toNum(value) {
+      const n = Number(value);
+      return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
     }
 
-    const clutchCount = (matches||[]).filter(m=>m.k >= 10 && m.win).length;
-    if(clutchCount > bestClutch){ bestClutch = clutchCount; pidClutch = p.id; }
-  });
+    function calcKD(kills, deaths) {
+      if (deaths === 0) return kills === 0 ? 0 : kills;
+      return kills / deaths;
+    }
 
-  res['Top Kills (all-time)'] = pidKills;
-  res['Best KD (all-time)'] = pidKD;
-  res['Best AVG (kills/round)'] = pidAVG;
-  res['Best Single-Match Kills'] = pidSingle;
-  if(pidCons) res['Most Consistent (σ low)'] = pidCons;
-  res['Clutch King (10+ kills wins)'] = pidClutch;
-  return res;
-}
+    function calcKAD(kills, assists, deaths) {
+      if (deaths === 0) return kills + assists;
+      return (kills + assists) / deaths;
+    }
 
-/* ---------- Рендер списка + топ + номинации ---------- */
-const playersList = $('playersList');
-const countEl = $('count');
+    function calcWinrate(wins, losses) {
+      const total = wins + losses;
+      return total === 0 ? 0 : (wins / total) * 100;
+    }
 
-function renderList(){
-  playersList.innerHTML = '';
-  const q = $('searchInput').value.trim().toLowerCase();
-  const sort = $('sortSelect').value;
-  let filtered = players.filter(p => !q || p.name.toLowerCase().includes(q));
-  if(sort === 'rating') filtered.sort((a,b)=> computeRATING(b).value - computeRATING(a).value);
-  else if(sort === 'kills') filtered.sort((a,b)=> b.kills - a.kills);
-  else if(sort === 'wins') filtered.sort((a,b)=> b.wins - a.wins);
-  else filtered.sort((a,b)=> b.createdAt - a.createdAt);
+    function formatKD(v) {
+      return Number.isFinite(v) ? v.toFixed(2) : '0.00';
+    }
 
-  countEl.textContent = players.length;
-  filtered.forEach(p=>{
-    const rank = computeRank(p);
-    const div = document.createElement('div');
-    div.className = 'player-row' + (p.id === selectedId ? ' selected' : '');
-    div.innerHTML = `
-      <div style="min-width:0">
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.name)}</div>
-          <div class="badge ${rank.cls}" title="Ранг: ${rank.name}">${rank.emoji} ${rank.name}</div>
-        </div>
-        <div class="small">K:${p.kills} A:${p.assists} D:${p.deaths} R:${p.rounds}</div>
-        <div style="margin-top:6px"><small class="small">${p.matches && p.matches.length ? p.matches.length + ' матч(ов) • ' : ''}Создан: ${new Date(p.createdAt).toLocaleDateString()}</small></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div class="small" title="Рейтинг">${computeRATING(p).display}</div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <button data-id="${p.id}" data-act="open">Открыть</button>
-          <button data-id="${p.id}" data-act="dup">Дубл</button>
-        </div>
-      </div>
-    `;
-    playersList.appendChild(div);
-  });
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
 
-  renderTop3();
-  renderNominations();
-}
+    function normalize(data) {
+      if (!Array.isArray(data)) return [];
+      return data.map(item => ({
+        nickname: String(item.nickname ?? '').trim(),
+        kills: toNum(item.kills),
+        deaths: toNum(item.deaths),
+        assists: toNum(item.assists),
+        wins: toNum(item.wins),
+        losses: toNum(item.losses)
+      })).filter(item => item.nickname);
+    }
 
-function renderTop3(){
-  const top = [...players].sort((a,b)=> computeRATING(b).value - computeRATING(a).value).slice(0,3);
-  const topList = $('topList'); topList.innerHTML = '';
-  top.forEach((p,i)=>{
-    const el = document.createElement('div'); el.className='card'; el.style.padding='8px'; el.style.flex='1';
-    const rank = computeRank(p);
-    el.innerHTML = `<div style="font-weight:700">#${i+1} ${escapeHtml(p.name)} <span class="badge ${rank.cls}" style="margin-left:8px">${rank.emoji} ${rank.name}</span></div><div class="small">R:${computeRATING(p).display} • K:${p.kills} W:${p.wins}</div>`;
-    topList.appendChild(el);
-  });
-}
+    function getEnhancedPlayers(list) {
+      return list.map(p => ({
+        ...p,
+        kd: calcKD(p.kills, p.deaths),
+        kad: calcKAD(p.kills, p.assists, p.deaths),
+        winrate: calcWinrate(p.wins, p.losses)
+      }));
+    }
 
-function renderNominations(){
-  const list = $('nominationsList'); list.innerHTML = '';
-  const nom = computeNominations(players);
-  for(const title in nom){
-    const pid = nom[title];
-    const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='6px'; el.style.borderRadius='6px'; el.style.background='rgba(255,255,255,0.01)';
-    el.innerHTML = `<div class="small">${escapeHtml(title)}</div><div class="small">${pid ? escapeHtml((players.find(p=>p.id===pid)||{name:'?'}).name) : '—'}</div>`;
-    list.appendChild(el);
-  }
-}
+    function applyFilter() {
+      const q = els.searchInput.value.trim().toLowerCase();
+      filtered = players.filter(p => p.nickname.toLowerCase().includes(q));
+      applySort();
+    }
 
-/* ---------- Выбор и отображение выбранного ---------- */
-function selectPlayer(id){ selectedId = id; renderList(); renderSelected(); }
-function find(id){ return players.find(x=>x.id===id); }
+    function applySort() {
+      const enhanced = getEnhancedPlayers(filtered);
+      enhanced.sort((a, b) => {
+        let av = a[sortKey];
+        let bv = b[sortKey];
 
-function renderSelected(){
-  const nameEl = $('selName'), infoEl = $('selInfo');
-  if(!selectedId){ nameEl.textContent = 'Нет выбранного игрока'; infoEl.textContent = 'Выбери слева'; updateStatFieldsEmpty(); return; }
-  const p = find(selectedId);
-  if(!p){ selectedId = null; renderSelected(); return; }
+        if (sortKey === 'nickname') {
+          av = a.nickname.toLowerCase();
+          bv = b.nickname.toLowerCase();
+        }
 
-  nameEl.textContent = p.name;
-  infoEl.textContent = 'Создан: ' + new Date(p.createdAt).toLocaleString();
+        if (typeof av === 'string') {
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        }
+        return sortDir === 'asc' ? av - bv : bv - av;
+      });
+      render(enhanced);
+      updateIndicators();
+    }
 
-  const rank = computeRank(p);
-  const selRank = $('selRank'); selRank.style.display='inline-block'; selRank.className = 'badge ' + rank.cls; selRank.textContent = rank.emoji + ' ' + rank.name;
+    function updateIndicators() {
+      for (const key of Object.keys(sortIndicators)) {
+        sortIndicators[key].textContent = '';
+      }
+      sortIndicators[sortKey].textContent = sortDir === 'asc' ? '▲' : '▼';
+    }
 
-  $('vKills').textContent = p.kills;
-  $('vAssists').textContent = p.assists;
-  $('vDeaths').textContent = p.deaths;
-  $('vRounds').textContent = p.rounds;
-  $('vWins').textContent = p.wins;
-  $('vLoses').textContent = p.loses;
+    function render(list) {
+      els.tbody.innerHTML = '';
 
-  $('vKD').textContent = computeKD(p).display;
-  $('vKAD').textContent = computeKAD(p).display;
-  $('vAVG').textContent = computeAVG(p).display;
-  $('vSVR').textContent = computeSVR(p).display;
-  $('vWINRATE').textContent = computeWINRATE(p).display;
-  $('vRATING').textContent = computeRATING(p).display;
+      if (!players.length) {
+        els.empty.style.display = 'block';
+      } else if (!list.length) {
+        els.empty.style.display = 'block';
+        els.empty.textContent = 'Ничего не найдено по этому запросу.';
+      } else {
+        els.empty.style.display = 'none';
+      }
 
-  const matches = p.matches || [];
-  $('matchCount').textContent = 'Матчей: ' + matches.length;
-  if(matches.length){
-    $('historyCard').style.display = 'block';
-    renderHistory(p);
-  } else {
-    $('historyCard').style.display = 'none';
-  }
-}
-function updateStatFieldsEmpty(){ ['vKills','vAssists','vDeaths','vRounds','vWins','vLoses','vKD','vKAD','vAVG','vSVR','vWINRATE','vRATING'].forEach(id=>$(id).textContent='—'); $('selRank').style.display='none'; }
+      const totalPlayers = players.length;
+      const allEnhanced = getEnhancedPlayers(players);
+      const bestKd = totalPlayers ? Math.max(...allEnhanced.map(p => p.kd)) : 0;
+      const avgWinrate = totalPlayers ? allEnhanced.reduce((s, p) => s + p.winrate, 0) / totalPlayers : 0;
 
-/* ---------- Создание / изменение ---------- */
-$('addBtn').onclick = ()=>{
-  const name = $('name').value.trim();
-  if(!name) return alert('Введите имя');
-  const p = {
-    id: uid(),
-    name,
-    kills: Math.max(0, Number($('kills').value) || 0),
-    assists: Math.max(0, Number($('assists').value) || 0),
-    deaths: Math.max(0, Number($('deaths').value) || 0),
-    rounds: Math.max(0, Number($('rounds').value) || 0),
-    wins: Math.max(0, Number($('wins').value) || 0),
-    loses: Math.max(0, Number($('loses').value) || 0),
-    matches: [],
-    createdAt: Date.now()
-  };
-  players.unshift(p);
-  selectedId = p.id;
-  save();
-  $('name').value = '';
-  $('kills').value = 0;
-  $('assists').value = 0;
-  $('deaths').value = 0;
-  $('rounds').value = 0;
-  $('wins').value = 0;
-  $('loses').value = 0;
-};
-$('addZeroBtn').onclick = ()=>{ const name = $('name').value.trim(); if(!name) return alert('Введите имя'); const p = { id:uid(), name, kills:0, assists:0, deaths:0, rounds:0, wins:0, loses:0, matches:[], createdAt:Date.now() }; players.unshift(p); selectedId=p.id; save(); $('name').value=''; };
+      els.countPlayers.textContent = totalPlayers;
+      els.bestKd.textContent = formatKD(bestKd);
+      els.avgWinrate.textContent = avgWinrate.toFixed(1) + '%';
+      els.statusText.textContent = totalPlayers ? `Загружено: ${totalPlayers} игроков` : 'Файл не загружен';
 
-/* ---------- Переименование ---------- */
-$('renamePlayer').onclick = ()=>{
-  if(!selectedId) return alert('Выберите игрока');
-  const p = find(selectedId);
-  if(!p) return;
-  const newName = prompt('Введите новое имя', p.name);
-  if(newName && newName.trim() !== '') {
-    p.name = newName.trim();
-    save();
-  }
-};
+      list.forEach(p => {
+        const tr = document.createElement('tr');
+        if (p.nickname === selectedNickname) tr.classList.add('selected');
+        const winrateClass = p.winrate >= 60 ? 'good' : p.winrate >= 40 ? 'warn' : 'bad';
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(p.nickname)}</strong></td>
+          <td>${p.kills}</td>
+          <td>${p.deaths}</td>
+          <td>${p.assists}</td>
+          <td>${p.wins}</td>
+          <td>${p.losses}</td>
+          <td>${formatKD(p.kd)}</td>
+          <td>${formatKD(p.kad)}</td>
+          <td><span class="pill ${winrateClass}">${p.winrate.toFixed(1)}%</span></td>
+        `;
+        tr.addEventListener('click', () => selectPlayer(p.nickname));
+        els.tbody.appendChild(tr);
+      });
 
-/* Делегирование кликов по списку */
-playersList.addEventListener('click', e=>{
-  const btn = e.target.closest('button'); if(!btn) return;
-  const id = btn.dataset.id; const act = btn.dataset.act;
-  if(act === 'open') selectPlayer(id);
-  if(act === 'dup'){ const p = find(id); if(!p) return; const copy = Object.assign({}, p, { id: uid(), name: p.name + '_copy', createdAt: Date.now() }); players.unshift(copy); save(); }
-});
-
-/* ---------- + / - и прямое редактирование ---------- */
-document.querySelectorAll('[data-op]').forEach(b=> b.addEventListener('click', ()=> applyOp(b.getAttribute('data-op')) ) );
-
-function applyOp(op){
-  if(!selectedId){ alert('Выбери игрока'); return; }
-  const p = find(selectedId); if(!p) return;
-  switch(op){
-    case 'k+': p.kills++; break;
-    case 'k-': p.kills = Math.max(0,p.kills-1); break;
-    case 'a+': p.assists++; break;
-    case 'a-': p.assists = Math.max(0,p.assists-1); break;
-    case 'd+': p.deaths++; break;
-    case 'd-': p.deaths = Math.max(0,p.deaths-1); break;
-    case 'r+': p.rounds++; break;
-    case 'r-': p.rounds = Math.max(0,p.rounds-1); break;
-    case 'w+': p.wins++; break;
-    case 'w-': p.wins = Math.max(0,p.wins-1); break;
-    case 'l+': p.loses++; break;
-    case 'l-': p.loses = Math.max(0,p.loses-1); break;
-  }
-  save();
-}
-
-['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
-  const el = $(id); if(!el) return;
-  el.onclick = ()=>{
-    if(!selectedId){ alert('Выбери игрока'); return; }
-    const p = find(selectedId); if(!p) return;
-    const map = { editKills:'kills', editAssists:'assists', editDeaths:'deaths', editRounds:'rounds', editWins:'wins', editLoses:'loses' };
-    const field = map[id];
-    const v = prompt('Новое значение для ' + field.toUpperCase(), p[field]);
-    if(v === null) return;
-    p[field] = Math.max(0, parseInt(v) || 0);
-    save();
-  };
-});
-
-/* ---------- Удаление / сброс ---------- */
-$('deletePlayer').onclick = ()=>{
-  if(!selectedId) return alert('Нет выбранного');
-  if(!confirm('Удалить игрока?')) return;
-  players = players.filter(x=>x.id !== selectedId);
-  selectedId = players.length ? players[0].id : null;
-  save();
-};
-$('resetPlayer').onclick = ()=>{
-  if(!selectedId) return alert('Нет выбранного');
-  if(!confirm('Сбросить все счётчики у игрока?')) return;
-  const p = find(selectedId); if(!p) return;
-  p.kills = p.assists = p.deaths = p.rounds = p.wins = p.loses = 0;
-  p.matches = [];
-  save();
-};
-
-/* ---------- Веса (слайдеры) ---------- */
-['wKD','wKAD','wAVG','wSVR','wWIN'].forEach(id=>{
-  const el = $(id);
-  if(!el) return;
-  el.oninput = ()=>{
-    weights.kd = Number($('wKD').value);
-    weights.kad = Number($('wKAD').value);
-    weights.avg = Number($('wAVG').value);
-    weights.svr = Number($('wSVR').value);
-    weights.win = Number($('wWIN').value);
-    save();
-  };
-});
-$('resetWeights').onclick = ()=>{ weights = { kd:30, kad:25, avg:20, svr:10, win:15 }; $('wKD').value=30; $('wKAD').value=25; $('wAVG').value=20; $('wSVR').value=10; $('wWIN').value=15; save(); };
-
-/* ---------- Экспорт / импорт / очистка ---------- */
-$('exportBtn').onclick = ()=>{
-  const data = { players, weights };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'players_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-};
-$('importBtn').onclick = ()=> $('importAll').click();
-$('exportAll').onclick = $('exportBtn').onclick;
-$('importAll').onclick = ()=>{
-  const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
-  inp.onchange = async ()=>{ const f = inp.files[0]; if(!f) return; try{ const txt = await f.text(); const data = JSON.parse(txt); if(Array.isArray(data.players)) players = data.players; if(data.weights) weights = data.weights; selectedId = players.length ? players[0].id : null; save(); alert('Импорт завершён'); }catch(e){ alert('Ошибка импорта'); console.error(e); } };
-  inp.click();
-};
-$('clearAll').onclick = ()=>{
-  if(!confirm('Уничтожить все данные (локально)?')) return;
-  players = []; selectedId = null; weights = { kd:30,kad:25,avg:20,svr:10,win:15 }; localStorage.removeItem(STORE); localStorage.removeItem(STORE_WEIGHTS); save();
-};
-
-/* ---------- Тема ---------- */
-$('themeToggle').onclick = ()=>{ const cur = document.body.getAttribute('data-theme') || 'dark'; const next = cur === 'dark' ? 'light' : 'dark'; document.body.setAttribute('data-theme', next); uiState.theme = next; save(); };
-
-/* ---------- Добавление матча ---------- */
-$('addMatchBtn').onclick = ()=>{
-  if(!selectedId) return alert('Выбери игрока');
-  const k = parseInt(prompt('KILLS в матче', '0')) || 0;
-  const a = parseInt(prompt('ASSISTS в матче', '0')) || 0;
-  const d = parseInt(prompt('DEATHS в матче', '0')) || 0;
-  const r = parseInt(prompt('ROUNDS в матче', '0')) || 0;
-  const win = confirm('Победа в матче? (OK = да, Отмена = нет)');
-  const p = find(selectedId);
-  if(!p) return;
-  p.matches = p.matches || [];
-  p.matches.push({ k,a,d,r,win: !!win, timestamp: Date.now() });
-  p.kills += k; p.assists += a; p.deaths += d; p.rounds += r; if(win) p.wins++; else p.loses++;
-  save();
-};
-
-$('clearHistory').onclick = ()=>{ if(!selectedId) return alert('Выбери игрока'); if(!confirm('Очистить историю матчей?')) return; const p=find(selectedId); if(!p) return; p.matches=[]; save(); };
-
-function renderHistory(p){
-  const list = $('historyList'); list.innerHTML='';
-  const arr = (p.matches||[]).slice(-12).reverse();
-  arr.forEach(m=>{
-    const el = document.createElement('div'); el.className='small'; el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center'; el.style.padding='6px'; el.style.borderRadius='6px'; el.style.background='rgba(255,255,255,0.01)';
-    el.innerHTML = `<div>K:${m.k} A:${m.a} D:${m.d} R:${m.r}</div><div>${m.win? 'W':'L'} • ${new Date(m.timestamp).toLocaleString()}</div>`;
-    list.appendChild(el);
-  });
-  drawSpark(p.matches||[]);
-}
-
-function drawSpark(matches){
-  const canvas = $('spark'); if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const data = (matches||[]).slice(-24).map(m=>m.k);
-  const w = canvas.clientWidth; const h = canvas.clientHeight;
-  canvas.width = Math.round(w*devicePixelRatio); canvas.height = Math.round(h*devicePixelRatio);
-  ctx.scale(devicePixelRatio, devicePixelRatio);
-  ctx.clearRect(0,0,w,h);
-  if(!data.length) return;
-  const max = Math.max(...data); const min = Math.min(...data);
-  const span = Math.max(1, max - min);
-  ctx.lineWidth = 2; ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--accent') || '#6ee7b7';
-  ctx.beginPath();
-  data.forEach((v,i)=>{
-    const x = (i/(data.length-1 || 1))*(w-8)+4;
-    const y = h - ((v - min) / span) * (h-8) - 4;
-    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  });
-  ctx.stroke();
-}
-
-/* ---------- Сравнение игроков ---------- */
-const compare1 = $('comparePlayer1');
-const compare2 = $('comparePlayer2');
-const compareBtn = $('compareBtn');
-const compareResult = $('compareResult');
-
-function populateCompareSelects(){
-  if(!compare1 || !compare2) return;
-  const options = players.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${computeRank(p).emoji})</option>`).join('');
-  compare1.innerHTML = '<option value="">— выберите —</option>' + options;
-  compare2.innerHTML = '<option value="">— выберите —</option>' + options;
-}
-
-function comparePlayers(){
-  const id1 = compare1.value;
-  const id2 = compare2.value;
-  if(!id1 || !id2) return alert('Выберите двух игроков');
-  if(id1 === id2) return alert('Выберите разных игроков');
-  const p1 = find(id1);
-  const p2 = find(id2);
-  if(!p1 || !p2) return;
-
-  const metrics = [
-    { label: 'KD', v1: computeKD(p1).value, v2: computeKD(p2).value, disp1: computeKD(p1).display, disp2: computeKD(p2).display },
-    { label: 'KAD', v1: computeKAD(p1).value, v2: computeKAD(p2).value, disp1: computeKAD(p1).display, disp2: computeKAD(p2).display },
-    { label: 'AVG', v1: computeAVG(p1).value, v2: computeAVG(p2).value, disp1: computeAVG(p1).display, disp2: computeAVG(p2).display },
-    { label: 'SVR', v1: computeSVR(p1).value, v2: computeSVR(p2).value, disp1: computeSVR(p1).display, disp2: computeSVR(p2).display },
-    { label: 'WINRATE', v1: computeWINRATE(p1).value, v2: computeWINRATE(p2).value, disp1: computeWINRATE(p1).display, disp2: computeWINRATE(p2).display },
-    { label: 'RATING', v1: computeRATING(p1).value, v2: computeRATING(p2).value, disp1: computeRATING(p1).display, disp2: computeRATING(p2).display }
-  ];
-
-  let html = `<div style="display:flex; gap:20px; justify-content:space-between; font-weight:700; margin-bottom:8px;">
-    <div>${escapeHtml(p1.name)}</div><div>${escapeHtml(p2.name)}</div>
-  </div>`;
-
-  metrics.forEach(m => {
-    const better = m.v1 > m.v2 ? 'p1' : (m.v2 > m.v1 ? 'p2' : 'tie');
-    html += `<div class="compare-metric">
-      <span>${m.label}: <span class="${better === 'p1' ? 'better' : ''}">${m.disp1}</span></span>
-      <span>${m.label}: <span class="${better === 'p2' ? 'better' : ''}">${m.disp2}</span></span>
-    </div>`;
-  });
-
-  // общий процент силы на основе rating
-  const rating1 = computeRATING(p1).value;
-  const rating2 = computeRATING(p2).value;
-  const total = rating1 + rating2;
-  const percent1 = total > 0 ? (rating1 / total * 100).toFixed(1) : 50;
-  const percent2 = total > 0 ? (rating2 / total * 100).toFixed(1) : 50;
-  html += `<div class="compare-metric" style="margin-top:8px; background:var(--glass);">
-    <span class="better">${escapeHtml(p1.name)} сильнее на ${percent1}%</span>
-    <span class="better">${escapeHtml(p2.name)} сильнее на ${percent2}%</span>
-  </div>`;
-
-  compareResult.innerHTML = html;
-}
-
-compareBtn.onclick = comparePlayers;
-// при изменении players обновляем списки
-window.addEventListener('load', ()=>{
-  populateCompareSelects();
-});
-
-/* ---------- Малые утилиты ---------- */
-function escapeHtml(s){ return String(s).replace(/[&<>"]+/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]||m)); }
-
-/* ---------- События поиска/сортировки ---------- */
-$('searchInput').oninput = renderList; $('sortSelect').onchange = renderList;
-
-/* ---------- Инициализация ---------- */
-load();
-if(players.length && !selectedId) selectedId = players[0].id;
-renderList();
-renderSelected();
-populateCompareSelects();
-
-// resize canvas
-window.addEventListener('resize', ()=>{ if(selectedId){ const p=find(selectedId); if(p && p.matches && p.matches.length) drawSpark(p.matches); } });
-
-</script>
-
-<!-- === admin panel (вставлен последним, перед </body>) === -->
-<script>
-(function(){
-  const ADMIN_KEY = 'is_admin_v3';
-  const PASSWORD = '5ugaradmin'; // пароль для включения админ-статуса
-
-  function isAdmin(){ return localStorage.getItem(ADMIN_KEY) === '1'; }
-  function setAdmin(on){
-    localStorage.setItem(ADMIN_KEY, on ? '1' : '0');
-    updateAdminUI();
-  }
-
-  function createAdminPanel(){
-    const header = document.querySelector('header');
-    if(!header) return;
-    const wrapper = document.createElement('div');
-    wrapper.id = 'adminPanelWrapper';
-    wrapper.style.display = 'flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '8px';
-    wrapper.style.marginLeft = '12px';
-    wrapper.innerHTML = `
-      <div id="adminControls" style="display:flex;gap:8px;align-items:center">
-        <div id="adminBadge" style="font-weight:700;display:none;color:#ffd27f">ADMIN</div>
-        <button id="adminLoginBtn">Войти как админ</button>
-        <button id="adminLogoutBtn" style="display:none">Выйти</button>
-      </div>
-    `;
-    const target = header.querySelector('.controls') || header;
-    target.appendChild(wrapper);
-
-    document.getElementById('adminLoginBtn').addEventListener('click', ()=>{
-      const pw = prompt('Введите пароль администратора');
-      if(pw === null) return;
-      if(pw === PASSWORD){ setAdmin(true); alert('Админ включён'); }
-      else alert('Неверный пароль');
-    });
-    document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{ setAdmin(false); alert('Админ выключен'); });
-  }
-
-  function updateAdminUI(){
-    const admin = isAdmin();
-    const badge = document.getElementById('adminBadge');
-    const loginBtn = document.getElementById('adminLoginBtn');
-    const logoutBtn = document.getElementById('adminLogoutBtn');
-    if(badge) badge.style.display = admin ? 'inline-block' : 'none';
-    if(loginBtn) loginBtn.style.display = admin ? 'none' : 'inline-block';
-    if(logoutBtn) logoutBtn.style.display = admin ? 'inline-block' : 'none';
-
-    const protectedIds = [
-      'addBtn','addZeroBtn','clearForm',
-      'deletePlayer','resetPlayer','renamePlayer',
-      'addMatchBtn','clearHistory',
-      'clearAll',
-      'wKD','wKAD','wAVG','wSVR','wWIN','resetWeights','exportAll'
-    ];
-    protectedIds.forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.disabled = !admin;
-    });
-
-    document.querySelectorAll('[data-op]').forEach(b=> b.disabled = !admin);
-    ['editKills','editAssists','editDeaths','editRounds','editWins','editLoses'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.disabled = !admin;
-    });
-
-    document.querySelectorAll('#playersList button[data-act="dup"]').forEach(b=> b.disabled = !admin);
-
-    ['wKD','wKAD','wAVG','wSVR','wWIN'].forEach(id=>{
-      const el = document.getElementById(id);
-      if(el) el.disabled = !admin;
-    });
-
-    document.querySelectorAll('button, input[type="range"]').forEach(el=>{
-      if(el.disabled) el.title = 'Требуется админ статус';
-      else if(el.title === 'Требуется админ статус') el.title = '';
-    });
-  }
-
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    if(btn.disabled){
-      e.stopImmediatePropagation();
-      e.preventDefault();
-      if(!isAdmin()) {
-        console.warn('Действие заблокировано — требуется админ статус');
+      if (!players.length) {
+        els.empty.textContent = 'Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл с первого сайта.';
       }
     }
-  }, true);
 
-  createAdminPanel();
-  updateAdminUI();
+    function selectPlayer(nickname) {
+      selectedNickname = nickname;
+      const p = getEnhancedPlayers(players).find(x => x.nickname === nickname);
+      if (!p) return;
+      els.selNick.textContent = p.nickname;
+      els.selKdKad.textContent = `${formatKD(p.kd)} / ${formatKD(p.kad)}`;
+      els.selKillsDeaths.textContent = `${p.kills} / ${p.deaths}`;
+      els.selWinsLosses.textContent = `${p.wins} / ${p.losses}`;
+      els.selectedHint.textContent = 'Выбран игрок из таблицы';
+      applyFilter();
+    }
 
-  window.__setAdmin = setAdmin;
-})();
-</script>
-<!-- === /admin panel === -->
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+    els.importBtn.addEventListener('click', () => els.fileInput.click());
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDXn6sD6c-0bR7BLbT2KKAGjkWOmTs6xmU",
-  authDomain: "stats-gamers.firebaseapp.com",
-  projectId: "stats-gamers",
-  storageBucket: "stats-gamers.firebasestorage.app",
-  messagingSenderId: "388691762335",
-  appId: "1:388691762335:web:97f384497a4d050bfa96aa",
-  measurementId: "G-MN0C5XWR01"
-};
+    els.fileInput.addEventListener('change', async () => {
+      const file = els.fileInput.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        players = normalize(data);
+        selectedNickname = null;
+        els.selNick.textContent = '—';
+        els.selKdKad.textContent = '—';
+        els.selKillsDeaths.textContent = '—';
+        els.selWinsLosses.textContent = '—';
+        els.selectedHint.textContent = 'Кликни по строке таблицы';
+        els.searchInput.value = '';
+        els.empty.textContent = 'Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл с первого сайта.';
+        applyFilter();
+        alert('Файл успешно загружен.');
+      } catch {
+        alert('Не удалось прочитать JSON-файл.');
+      } finally {
+        els.fileInput.value = '';
+      }
+    });
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+    els.clearBtn.addEventListener('click', () => {
+      players = [];
+      filtered = [];
+      selectedNickname = null;
+      els.searchInput.value = '';
+      els.selNick.textContent = '—';
+      els.selKdKad.textContent = '—';
+      els.selKillsDeaths.textContent = '—';
+      els.selWinsLosses.textContent = '—';
+      els.selectedHint.textContent = 'Кликни по строке таблицы';
+      render([]);
+    });
+
+    els.searchInput.addEventListener('input', () => {
+      selectedNickname = null;
+      els.selectedHint.textContent = 'Кликни по строке таблицы';
+      applyFilter();
+    });
+
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        if (sortKey === key) {
+          sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortKey = key;
+          sortDir = key === 'nickname' ? 'asc' : 'desc';
+        }
+        applySort();
+      });
+    });
+
+    els.resetSortBtn.addEventListener('click', () => {
+      sortKey = 'kills';
+      sortDir = 'desc';
+      applySort();
+    });
+
+    updateIndicators();
+    render([]);
+  </script>
 </body>
 </html>
-
