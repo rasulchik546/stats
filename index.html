@@ -14,7 +14,6 @@
       --muted: #9bb0cc;
       --accent: #4aa3ff;
       --accent2: #1f6feb;
-      --black: #0a0a0a;
       --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
       --radius: 22px;
     }
@@ -45,7 +44,7 @@
     }
 
     .wrap {
-      width: min(1280px, calc(100% - 28px));
+      width: min(1400px, calc(100% - 28px));
       margin: 24px auto 36px;
       position: relative;
       z-index: 1;
@@ -96,7 +95,7 @@
     .title p {
       margin: 0;
       color: var(--muted);
-      max-width: 68ch;
+      max-width: 72ch;
       line-height: 1.5;
     }
 
@@ -122,10 +121,6 @@
       gap: 10px;
       margin-top: 18px;
       align-items: center;
-    }
-
-    button, input {
-      font: inherit;
     }
 
     .btn {
@@ -155,11 +150,11 @@
       animation: rise 0.7s ease both;
     }
 
-    .import-grid {
+    .search-row {
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 12px;
-      align-items: end;
+      margin-bottom: 14px;
     }
 
     .field label {
@@ -196,13 +191,6 @@
     .section-title h2 { margin: 0; font-size: 18px; }
     .section-title span { color: var(--muted); font-size: 13px; }
 
-    .search-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
     .table-wrap {
       overflow: auto;
       border-radius: 18px;
@@ -212,7 +200,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1040px;
+      min-width: 1480px;
       background: rgba(4, 10, 20, 0.3);
     }
 
@@ -269,7 +257,7 @@
 
     .details {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       margin-top: 14px;
     }
@@ -309,14 +297,13 @@
 
     @media (max-width: 1100px) {
       .hero { grid-template-columns: 1fr; }
-      .import-grid { grid-template-columns: 1fr; }
       .search-row { grid-template-columns: 1fr; }
       .stats-mini { grid-template-columns: 1fr; }
       .details { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 700px) {
-      .wrap { width: min(100% - 18px, 1280px); margin-top: 12px; }
+      .wrap { width: min(100% - 18px, 1400px); margin-top: 12px; }
       .panel, .card { padding: 16px; border-radius: 18px; }
       .toolbar { gap: 8px; }
       .btn { width: 100%; justify-content: center; }
@@ -329,7 +316,7 @@
       <section class="panel">
         <div class="title">
           <h1>Stats Viewer</h1>
-          <p>Загрузи JSON-файл, сохранённый на первом сайте, и смотри статистику игроков без возможности редактирования. Доступны поиск, сортировка и просмотр данных по нику.</p>
+          <p>Загрузи JSON-файл, сохранённый на первом сайте, и смотри статистику игроков без возможности редактирования. Поддерживаются поиск, сортировка и новые метрики: KPR, DPR, APR, SVR, Impact и Rating.</p>
         </div>
 
         <div class="stats-mini">
@@ -368,28 +355,35 @@
           <button class="btn primary" id="resetSortBtn" type="button">Сброс сортировки</button>
         </div>
 
-        <div class="card" style="padding: 0; background: transparent; border: 0; box-shadow: none;">
-          <div class="section-title" style="margin-bottom: 10px;">
-            <h2 style="font-size: 16px;">Выбранный игрок</h2>
-            <span id="selectedHint">Кликни по строке таблицы</span>
+        <div class="section-title" style="margin-bottom: 10px;">
+          <h2 style="font-size: 16px;">Выбранный игрок</h2>
+          <span id="selectedHint">Кликни по строке таблицы</span>
+        </div>
+
+        <div class="details">
+          <div class="detail-box">
+            <div class="label">Ник</div>
+            <div class="value" id="selNick">—</div>
           </div>
-          <div class="details">
-            <div class="detail-box">
-              <div class="label">Ник</div>
-              <div class="value" id="selNick">—</div>
-            </div>
-            <div class="detail-box">
-              <div class="label">KD / KAD</div>
-              <div class="value" id="selKdKad">—</div>
-            </div>
-            <div class="detail-box">
-              <div class="label">Килы / Смерти</div>
-              <div class="value" id="selKillsDeaths">—</div>
-            </div>
-            <div class="detail-box">
-              <div class="label">Победы / Поражения</div>
-              <div class="value" id="selWinsLosses">—</div>
-            </div>
+          <div class="detail-box">
+            <div class="label">KD / KAD</div>
+            <div class="value" id="selKdKad">—</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">KPR / DPR / APR</div>
+            <div class="value" id="selKprDprApr">—</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">SVR / Impact</div>
+            <div class="value" id="selSvrImpact">—</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Rating</div>
+            <div class="value" id="selRating">—</div>
+          </div>
+          <div class="detail-box">
+            <div class="label">Килы / Смерти / Раунды</div>
+            <div class="value" id="selKillsDeathsRounds">—</div>
           </div>
         </div>
       </section>
@@ -404,15 +398,22 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr id="headerRow">
+            <tr>
               <th data-sort="nickname">Ник <span class="sort-indicator" id="ind-nickname"></span></th>
               <th data-sort="kills">Килы <span class="sort-indicator" id="ind-kills"></span></th>
               <th data-sort="deaths">Смерти <span class="sort-indicator" id="ind-deaths"></span></th>
               <th data-sort="assists">Ассисты <span class="sort-indicator" id="ind-assists"></span></th>
+              <th data-sort="rounds">Раунды <span class="sort-indicator" id="ind-rounds"></span></th>
               <th data-sort="wins">Победы <span class="sort-indicator" id="ind-wins"></span></th>
               <th data-sort="losses">Поражения <span class="sort-indicator" id="ind-losses"></span></th>
               <th data-sort="kd">KD <span class="sort-indicator" id="ind-kd"></span></th>
               <th data-sort="kad">KAD <span class="sort-indicator" id="ind-kad"></span></th>
+              <th data-sort="kpr">KPR <span class="sort-indicator" id="ind-kpr"></span></th>
+              <th data-sort="dpr">DPR <span class="sort-indicator" id="ind-dpr"></span></th>
+              <th data-sort="apr">APR <span class="sort-indicator" id="ind-apr"></span></th>
+              <th data-sort="svr">SVR <span class="sort-indicator" id="ind-svr"></span></th>
+              <th data-sort="impact">Impact <span class="sort-indicator" id="ind-impact"></span></th>
+              <th data-sort="rating">Rating <span class="sort-indicator" id="ind-rating"></span></th>
               <th data-sort="winrate">WINRATE <span class="sort-indicator" id="ind-winrate"></span></th>
             </tr>
           </thead>
@@ -439,22 +440,17 @@
       statusText: document.getElementById('statusText'),
       selNick: document.getElementById('selNick'),
       selKdKad: document.getElementById('selKdKad'),
-      selKillsDeaths: document.getElementById('selKillsDeaths'),
-      selWinsLosses: document.getElementById('selWinsLosses'),
+      selKprDprApr: document.getElementById('selKprDprApr'),
+      selSvrImpact: document.getElementById('selSvrImpact'),
+      selRating: document.getElementById('selRating'),
+      selKillsDeathsRounds: document.getElementById('selKillsDeathsRounds'),
       selectedHint: document.getElementById('selectedHint')
     };
 
-    const sortIndicators = {
-      nickname: document.getElementById('ind-nickname'),
-      kills: document.getElementById('ind-kills'),
-      deaths: document.getElementById('ind-deaths'),
-      assists: document.getElementById('ind-assists'),
-      wins: document.getElementById('ind-wins'),
-      losses: document.getElementById('ind-losses'),
-      kd: document.getElementById('ind-kd'),
-      kad: document.getElementById('ind-kad'),
-      winrate: document.getElementById('ind-winrate')
-    };
+    const sortIndicators = Object.fromEntries(
+      ['nickname','kills','deaths','assists','rounds','wins','losses','kd','kad','kpr','dpr','apr','svr','impact','rating','winrate']
+        .map(k => [k, document.getElementById(`ind-${k}`)])
+    );
 
     let players = [];
     let filtered = [];
@@ -477,12 +473,37 @@
       return (kills + assists) / deaths;
     }
 
+    function calcKPR(kills, rounds) {
+      return rounds === 0 ? 0 : kills / rounds;
+    }
+
+    function calcDPR(deaths, rounds) {
+      return rounds === 0 ? 0 : deaths / rounds;
+    }
+
+    function calcAPR(assists, rounds) {
+      return rounds === 0 ? 0 : assists / rounds;
+    }
+
+    function calcSVR(rounds, deaths) {
+      if (rounds === 0) return 0;
+      return (Math.max(rounds - deaths, 0) / rounds) * 100;
+    }
+
+    function calcImpact(kpr, apr) {
+      return kpr + 0.5 * apr;
+    }
+
+    function calcRating(kpr, dpr, impact) {
+      return (0.6 * kpr - 0.4 * dpr + 0.4 * impact) * 2;
+    }
+
     function calcWinrate(wins, losses) {
       const total = wins + losses;
       return total === 0 ? 0 : (wins / total) * 100;
     }
 
-    function formatKD(v) {
+    function format2(v) {
       return Number.isFinite(v) ? v.toFixed(2) : '0.00';
     }
 
@@ -502,51 +523,30 @@
         kills: toNum(item.kills),
         deaths: toNum(item.deaths),
         assists: toNum(item.assists),
+        rounds: toNum(item.rounds ?? item.round ?? item.r),
         wins: toNum(item.wins),
         losses: toNum(item.losses)
       })).filter(item => item.nickname);
     }
 
     function getEnhancedPlayers(list) {
-      return list.map(p => ({
-        ...p,
-        kd: calcKD(p.kills, p.deaths),
-        kad: calcKAD(p.kills, p.assists, p.deaths),
-        winrate: calcWinrate(p.wins, p.losses)
-      }));
-    }
-
-    function applyFilter() {
-      const q = els.searchInput.value.trim().toLowerCase();
-      filtered = players.filter(p => p.nickname.toLowerCase().includes(q));
-      applySort();
-    }
-
-    function applySort() {
-      const enhanced = getEnhancedPlayers(filtered);
-      enhanced.sort((a, b) => {
-        let av = a[sortKey];
-        let bv = b[sortKey];
-
-        if (sortKey === 'nickname') {
-          av = a.nickname.toLowerCase();
-          bv = b.nickname.toLowerCase();
-        }
-
-        if (typeof av === 'string') {
-          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-        }
-        return sortDir === 'asc' ? av - bv : bv - av;
+      return list.map(p => {
+        const kd = calcKD(p.kills, p.deaths);
+        const kad = calcKAD(p.kills, p.assists, p.deaths);
+        const kpr = calcKPR(p.kills, p.rounds);
+        const dpr = calcDPR(p.deaths, p.rounds);
+        const apr = calcAPR(p.assists, p.rounds);
+        const svr = calcSVR(p.rounds, p.deaths);
+        const impact = calcImpact(kpr, apr);
+        const rating = calcRating(kpr, dpr, impact);
+        const winrate = calcWinrate(p.wins, p.losses);
+        return { ...p, kd, kad, kpr, dpr, apr, svr, impact, rating, winrate };
       });
-      render(enhanced);
-      updateIndicators();
     }
 
     function updateIndicators() {
-      for (const key of Object.keys(sortIndicators)) {
-        sortIndicators[key].textContent = '';
-      }
-      sortIndicators[sortKey].textContent = sortDir === 'asc' ? '▲' : '▼';
+      Object.values(sortIndicators).forEach(el => el.textContent = '');
+      if (sortIndicators[sortKey]) sortIndicators[sortKey].textContent = sortDir === 'asc' ? '▲' : '▼';
     }
 
     function render(list) {
@@ -554,6 +554,7 @@
 
       if (!players.length) {
         els.empty.style.display = 'block';
+        els.empty.textContent = 'Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл с первого сайта.';
       } else if (!list.length) {
         els.empty.style.display = 'block';
         els.empty.textContent = 'Ничего не найдено по этому запросу.';
@@ -567,7 +568,7 @@
       const avgWinrate = totalPlayers ? allEnhanced.reduce((s, p) => s + p.winrate, 0) / totalPlayers : 0;
 
       els.countPlayers.textContent = totalPlayers;
-      els.bestKd.textContent = formatKD(bestKd);
+      els.bestKd.textContent = format2(bestKd);
       els.avgWinrate.textContent = avgWinrate.toFixed(1) + '%';
       els.statusText.textContent = totalPlayers ? `Загружено: ${totalPlayers} игроков` : 'Файл не загружен';
 
@@ -575,24 +576,52 @@
         const tr = document.createElement('tr');
         if (p.nickname === selectedNickname) tr.classList.add('selected');
         const winrateClass = p.winrate >= 60 ? 'good' : p.winrate >= 40 ? 'warn' : 'bad';
+        const svrClass = p.svr >= 50 ? 'good' : p.svr >= 25 ? 'warn' : 'bad';
         tr.innerHTML = `
           <td><strong>${escapeHtml(p.nickname)}</strong></td>
           <td>${p.kills}</td>
           <td>${p.deaths}</td>
           <td>${p.assists}</td>
+          <td>${p.rounds}</td>
           <td>${p.wins}</td>
           <td>${p.losses}</td>
-          <td>${formatKD(p.kd)}</td>
-          <td>${formatKD(p.kad)}</td>
+          <td>${format2(p.kd)}</td>
+          <td>${format2(p.kad)}</td>
+          <td>${p.kpr.toFixed(2)}</td>
+          <td>${p.dpr.toFixed(2)}</td>
+          <td>${p.apr.toFixed(2)}</td>
+          <td><span class="pill ${svrClass}">${p.svr.toFixed(1)}%</span></td>
+          <td>${p.impact.toFixed(2)}</td>
+          <td>${p.rating.toFixed(2)}</td>
           <td><span class="pill ${winrateClass}">${p.winrate.toFixed(1)}%</span></td>
         `;
         tr.addEventListener('click', () => selectPlayer(p.nickname));
         els.tbody.appendChild(tr);
       });
+    }
 
-      if (!players.length) {
-        els.empty.textContent = 'Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл с первого сайта.';
-      }
+    function applySort() {
+      const enhanced = getEnhancedPlayers(filtered);
+      enhanced.sort((a, b) => {
+        let av = a[sortKey];
+        let bv = b[sortKey];
+        if (sortKey === 'nickname') {
+          av = a.nickname.toLowerCase();
+          bv = b.nickname.toLowerCase();
+        }
+        if (typeof av === 'string') {
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        }
+        return sortDir === 'asc' ? av - bv : bv - av;
+      });
+      render(enhanced);
+      updateIndicators();
+    }
+
+    function applyFilter() {
+      const q = els.searchInput.value.trim().toLowerCase();
+      filtered = players.filter(p => p.nickname.toLowerCase().includes(q));
+      applySort();
     }
 
     function selectPlayer(nickname) {
@@ -600,9 +629,11 @@
       const p = getEnhancedPlayers(players).find(x => x.nickname === nickname);
       if (!p) return;
       els.selNick.textContent = p.nickname;
-      els.selKdKad.textContent = `${formatKD(p.kd)} / ${formatKD(p.kad)}`;
-      els.selKillsDeaths.textContent = `${p.kills} / ${p.deaths}`;
-      els.selWinsLosses.textContent = `${p.wins} / ${p.losses}`;
+      els.selKdKad.textContent = `${format2(p.kd)} / ${format2(p.kad)}`;
+      els.selKprDprApr.textContent = `${p.kpr.toFixed(2)} / ${p.dpr.toFixed(2)} / ${p.apr.toFixed(2)}`;
+      els.selSvrImpact.textContent = `${p.svr.toFixed(1)}% / ${p.impact.toFixed(2)}`;
+      els.selRating.textContent = p.rating.toFixed(2);
+      els.selKillsDeathsRounds.textContent = `${p.kills} / ${p.deaths} / ${p.rounds}`;
       els.selectedHint.textContent = 'Выбран игрок из таблицы';
       applyFilter();
     }
@@ -619,11 +650,12 @@
         selectedNickname = null;
         els.selNick.textContent = '—';
         els.selKdKad.textContent = '—';
-        els.selKillsDeaths.textContent = '—';
-        els.selWinsLosses.textContent = '—';
+        els.selKprDprApr.textContent = '—';
+        els.selSvrImpact.textContent = '—';
+        els.selRating.textContent = '—';
+        els.selKillsDeathsRounds.textContent = '—';
         els.selectedHint.textContent = 'Кликни по строке таблицы';
         els.searchInput.value = '';
-        els.empty.textContent = 'Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл с первого сайта.';
         applyFilter();
         alert('Файл успешно загружен.');
       } catch {
@@ -640,10 +672,13 @@
       els.searchInput.value = '';
       els.selNick.textContent = '—';
       els.selKdKad.textContent = '—';
-      els.selKillsDeaths.textContent = '—';
-      els.selWinsLosses.textContent = '—';
+      els.selKprDprApr.textContent = '—';
+      els.selSvrImpact.textContent = '—';
+      els.selRating.textContent = '—';
+      els.selKillsDeathsRounds.textContent = '—';
       els.selectedHint.textContent = 'Кликни по строке таблицы';
       render([]);
+      updateIndicators();
     });
 
     els.searchInput.addEventListener('input', () => {
