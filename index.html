@@ -19,6 +19,7 @@
     }
 
     * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
       min-height: 100%;
@@ -85,13 +86,19 @@
       pointer-events: none;
     }
 
-    .title { display: flex; flex-direction: column; gap: 8px; }
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .title h1 {
       margin: 0;
       font-size: clamp(28px, 3vw, 42px);
       letter-spacing: 0.2px;
       line-height: 1.05;
     }
+
     .title p {
       margin: 0;
       color: var(--muted);
@@ -112,8 +119,19 @@
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.06);
     }
-    .mini .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-    .mini .value { font-size: 22px; font-weight: 800; margin-top: 6px; }
+
+    .mini .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .mini .value {
+      font-size: 22px;
+      font-weight: 800;
+      margin-top: 6px;
+    }
 
     .toolbar {
       display: flex;
@@ -140,6 +158,7 @@
       gap: 8px;
       font-weight: 700;
     }
+
     .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(0,0,0,.28); }
     .btn:active { transform: translateY(0px) scale(0.99); }
     .btn.primary { background: linear-gradient(135deg, var(--accent2), var(--accent)); }
@@ -176,6 +195,7 @@
       outline: none;
       transition: border .18s ease, transform .18s ease, box-shadow .18s ease;
     }
+
     .field input:focus {
       border-color: rgba(74,163,255,0.7);
       box-shadow: 0 0 0 4px rgba(74,163,255,0.12);
@@ -188,6 +208,7 @@
       gap: 12px;
       margin-bottom: 14px;
     }
+
     .section-title h2 { margin: 0; font-size: 18px; }
     .section-title span { color: var(--muted); font-size: 13px; }
 
@@ -234,6 +255,7 @@
       transition: background .15s ease, transform .15s ease;
       cursor: pointer;
     }
+
     tbody tr:hover { background: rgba(74,163,255,0.07); }
     tbody tr.selected { background: rgba(74,163,255,0.14); }
 
@@ -245,6 +267,7 @@
       font-weight: 700;
       background: rgba(255,255,255,0.06);
     }
+
     .pill.good { color: #8ff0be; }
     .pill.warn { color: #ffd36b; }
     .pill.bad { color: #ff8fa4; }
@@ -268,6 +291,7 @@
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.06);
     }
+
     .detail-box .label {
       color: var(--muted);
       font-size: 12px;
@@ -275,6 +299,7 @@
       letter-spacing: .08em;
       margin-bottom: 8px;
     }
+
     .detail-box .value {
       font-size: 18px;
       font-weight: 800;
@@ -295,10 +320,8 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* NEW: modal player card */
-    body.modal-open {
-      overflow: hidden;
-    }
+    /* MODAL */
+    body.modal-open { overflow: hidden; }
 
     .modal-overlay {
       position: fixed;
@@ -307,9 +330,9 @@
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 18px;
-      background: rgba(2, 8, 18, 0.72);
-      backdrop-filter: blur(12px);
+      padding: 16px;
+      background: rgba(2, 8, 18, 0.82);
+      backdrop-filter: blur(14px);
     }
 
     .modal-overlay.open {
@@ -317,140 +340,262 @@
       animation: fadeIn .18s ease both;
     }
 
-    .modal-card {
-      width: min(980px, 100%);
-      max-height: min(82vh, 820px);
-      overflow: auto;
-      border-radius: 28px;
-      background: linear-gradient(180deg, rgba(10, 20, 38, 0.96), rgba(5, 12, 24, 0.96));
-      border: 1px solid rgba(255,255,255,0.10);
-      box-shadow: 0 30px 80px rgba(0,0,0,.55);
-      padding: 20px;
+    .hltv-card {
+      width: min(1120px, 100%);
+      min-height: 620px;
       position: relative;
-    }
-
-    .modal-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-
-    .modal-kicker {
-      font-size: 12px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .modal-head h3 {
-      margin: 0;
-      font-size: clamp(24px, 3vw, 34px);
-      line-height: 1.1;
-    }
-
-    .modal-sub {
-      margin-top: 8px;
-      color: var(--muted);
-      line-height: 1.4;
-      font-size: 13px;
+      border-radius: 24px;
+      background:
+        linear-gradient(90deg, rgba(24,31,41,0.96), rgba(12,18,28,0.96)),
+        linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 30px 90px rgba(0,0,0,.6);
+      overflow: hidden;
+      padding: 18px;
     }
 
     .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
       border: 0;
       cursor: pointer;
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.07);
-      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
       font-size: 26px;
       line-height: 1;
       display: grid;
       place-items: center;
-      transition: transform .18s ease, background .18s ease;
-      flex: 0 0 auto;
     }
 
-    .modal-close:hover {
-      transform: translateY(-1px);
-      background: rgba(255,255,255,0.12);
+    .hltv-topline {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-right: 56px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
     }
 
-    .modal-body {
+    .hltv-topchip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: #dbe7ff;
+      font-size: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hltv-layout {
       display: grid;
-      grid-template-columns: 1fr 220px 1fr;
-      gap: 14px;
+      grid-template-columns: 290px 1fr;
+      gap: 16px;
       align-items: stretch;
     }
 
-    .modal-side {
-      display: grid;
-      gap: 12px;
-      align-content: start;
+    .player-panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 560px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .stat-card {
-      padding: 14px 15px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      min-height: 72px;
+    .player-panel::before {
+      content: "";
+      position: absolute;
+      inset: auto -30px -30px auto;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,163,255,0.18), transparent 70%);
+      pointer-events: none;
     }
 
-    .stat-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .10em;
-      color: var(--muted);
+    .player-flag {
+      font-size: 22px;
       margin-bottom: 8px;
     }
 
-    .stat-value {
-      font-size: 18px;
-      font-weight: 800;
-      line-height: 1.2;
-      word-break: break-word;
-    }
-
-    .modal-center {
-      border-radius: 22px;
-      background: linear-gradient(180deg, rgba(74,163,255,0.13), rgba(255,255,255,0.04));
+    .player-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      font-size: 54px;
+      background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.08);
-      display: grid;
-      place-items: center;
-      text-align: center;
-      padding: 18px 14px;
-      min-height: 100%;
-    }
-
-    .avatar-ring {
-      width: 116px;
-      height: 116px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font-size: 52px;
-      background: radial-gradient(circle at top, rgba(74,163,255,0.34), rgba(255,255,255,0.05));
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: inset 0 0 0 8px rgba(255,255,255,0.03);
       margin-bottom: 14px;
     }
 
-    .center-name {
-      font-size: 22px;
+    .player-name {
+      font-size: 30px;
       font-weight: 900;
-      margin-bottom: 6px;
-      line-height: 1.2;
+      line-height: 1;
+      margin-bottom: 8px;
     }
 
-    .center-meta {
-      color: var(--muted);
+    .player-meta {
+      color: #b2c2db;
       font-size: 13px;
-      line-height: 1.45;
-      max-width: 18ch;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .profile-btn {
+      border: 0;
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #1f6feb, #4aa3ff);
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .stats-panel {
+      border-radius: 22px;
+      padding: 10px;
+    }
+
+    .rating-row {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .rating-box {
+      border-radius: 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 16px;
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .rating-box.center {
+      align-items: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rating-box.center::before {
+      content: "";
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 220px;
+      height: 110px;
+      border-top-left-radius: 220px;
+      border-top-right-radius: 220px;
+      border: 8px solid rgba(58, 211, 76, 0.9);
+      border-bottom: 0;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .rating-status {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      margin-bottom: 6px;
+      color: #39e06f;
+    }
+
+    .rating-value {
+      font-size: 28px;
+      font-weight: 900;
+      color: #f6b93b;
+    }
+
+    .rating-main {
+      font-size: 54px;
+      font-weight: 1000;
+      line-height: 1;
+      margin: 6px 0 8px;
+    }
+
+    .rating-label {
+      font-size: 12px;
+      letter-spacing: .12em;
+      color: #8ea2c1;
+      font-weight: 800;
+    }
+
+    .rating-label.big {
+      color: #dbe7ff;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .metric-card {
+      border-radius: 18px;
+      min-height: 125px;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 10px;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #39e06f, rgba(57,224,111,0.15));
+      opacity: 0.9;
+    }
+
+    .metric-value {
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      letter-spacing: .12em;
+      color: #8ea2c1;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .metric-status {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      color: #39e06f;
+    }
+
+    .modal-summary {
+      margin-top: 12px;
+      color: #c7d7f2;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     @keyframes fadeIn {
@@ -480,6 +625,29 @@
         height: 98px;
         font-size: 44px;
       }
+
+      .hltv-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .rating-row {
+        grid-template-columns: 1fr;
+      }
+
+      .player-panel {
+        min-height: 240px;
+        align-items: center;
+        text-align: center;
+      }
+
+      .hltv-topline {
+        justify-content: flex-start;
+        margin-right: 0;
+      }
     }
 
     @media (max-width: 700px) {
@@ -496,7 +664,7 @@
       <section class="panel">
         <div class="title">
           <h1>Stats Viewer</h1>
-          <p>Загрузи JSON-файл, сохранённый на первом сайте, и смотри статистику игроков без возможности редактирования. Поддерживаются поиск, сортировка и новые метрики: KPR, DPR, APR, SVR, Impact и Rating.</p>
+          <p>Загрузи JSON-файл, сохранённый на первом сайте, и смотри статистику игроков без возможности редактирования. Поддерживаются поиск, сортировка и метрики: KPR, DPR, APR, SVR, Impact и Rating.</p>
         </div>
 
         <div class="stats-mini">
@@ -605,28 +773,87 @@
     </section>
   </div>
 
-  <!-- NEW: player modal -->
+  <!-- MODAL -->
   <div class="modal-overlay" id="playerModal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalNick">
-      <div class="modal-head">
-        <div>
-          <div class="modal-kicker">Player profile</div>
-          <h3 id="modalNick">—</h3>
-          <div class="modal-sub" id="modalSubtitle">Полная карточка игрока</div>
-        </div>
-        <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Закрыть">×</button>
+    <div class="hltv-card" role="dialog" aria-modal="true" aria-labelledby="modalNick">
+      <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Закрыть">×</button>
+
+      <div class="hltv-topline">
+        <div class="hltv-topchip">Player profile</div>
+        <div class="hltv-topchip">Local stats</div>
+        <div class="hltv-topchip">Read only</div>
       </div>
 
-      <div class="modal-body">
-        <div class="modal-side" id="modalLeftStats"></div>
+      <div class="hltv-layout">
+        <aside class="player-panel">
+          <div class="player-flag" id="modalFlag">👤</div>
+          <div class="player-avatar">👤</div>
+          <div class="player-name" id="modalNick">—</div>
+          <div class="player-meta" id="modalSubtitle">—</div>
+          <button class="profile-btn" type="button">Player profile</button>
+        </aside>
 
-        <div class="modal-center">
-          <div class="avatar-ring">👤</div>
-          <div class="center-name" id="modalCenterName">—</div>
-          <div class="center-meta" id="modalCenterMeta">—</div>
-        </div>
+        <section class="stats-panel">
+          <div class="rating-row">
+            <div class="rating-box">
+              <div class="rating-value" id="modalLeftStat">—</div>
+              <div class="rating-label" id="modalLeftLabel">KD</div>
+            </div>
 
-        <div class="modal-side" id="modalRightStats"></div>
+            <div class="rating-box center">
+              <div class="rating-status">GOOD</div>
+              <div class="rating-main" id="modalRating">0.00</div>
+              <div class="rating-label big">RATING</div>
+            </div>
+
+            <div class="rating-box">
+              <div class="rating-value" id="modalRightStat">—</div>
+              <div class="rating-label" id="modalRightLabel">KAD</div>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-card">
+              <div class="metric-value" id="modalKpr">0.00</div>
+              <div class="metric-label">KPR</div>
+              <div class="metric-status">GOOD</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-value" id="modalDpr">0.00</div>
+              <div class="metric-label">DPR</div>
+              <div class="metric-status">GOOD</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-value" id="modalApr">0.00</div>
+              <div class="metric-label">APR</div>
+              <div class="metric-status">GOOD</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-value" id="modalSvr">0.0%</div>
+              <div class="metric-label">SVR</div>
+              <div class="metric-status">GOOD</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-value" id="modalImpact">0.00</div>
+              <div class="metric-label">IMPACT</div>
+              <div class="metric-status">GOOD</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-value" id="modalWinrate">0.0%</div>
+              <div class="metric-label">WINRATE</div>
+              <div class="metric-status">GOOD</div>
+            </div>
+          </div>
+
+          <div class="modal-summary" id="modalSummary">
+            —
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -651,14 +878,24 @@
       selRating: document.getElementById('selRating'),
       selKillsDeathsRounds: document.getElementById('selKillsDeathsRounds'),
       selectedHint: document.getElementById('selectedHint'),
+
       playerModal: document.getElementById('playerModal'),
       modalCloseBtn: document.getElementById('modalCloseBtn'),
+      modalFlag: document.getElementById('modalFlag'),
       modalNick: document.getElementById('modalNick'),
       modalSubtitle: document.getElementById('modalSubtitle'),
-      modalCenterName: document.getElementById('modalCenterName'),
-      modalCenterMeta: document.getElementById('modalCenterMeta'),
-      modalLeftStats: document.getElementById('modalLeftStats'),
-      modalRightStats: document.getElementById('modalRightStats')
+      modalLeftStat: document.getElementById('modalLeftStat'),
+      modalLeftLabel: document.getElementById('modalLeftLabel'),
+      modalRightStat: document.getElementById('modalRightStat'),
+      modalRightLabel: document.getElementById('modalRightLabel'),
+      modalRating: document.getElementById('modalRating'),
+      modalKpr: document.getElementById('modalKpr'),
+      modalDpr: document.getElementById('modalDpr'),
+      modalApr: document.getElementById('modalApr'),
+      modalSvr: document.getElementById('modalSvr'),
+      modalImpact: document.getElementById('modalImpact'),
+      modalWinrate: document.getElementById('modalWinrate'),
+      modalSummary: document.getElementById('modalSummary')
     };
 
     const sortIndicators = Object.fromEntries(
@@ -739,7 +976,8 @@
         assists: toNum(item.assists),
         rounds: toNum(item.rounds ?? item.round ?? item.r),
         wins: toNum(item.wins),
-        losses: toNum(item.losses)
+        losses: toNum(item.losses),
+        country: String(item.country ?? item.flag ?? '').trim()
       })).filter(item => item.nickname);
     }
 
@@ -772,32 +1010,38 @@
       `;
     }
 
+    function setSelectedDetails(p) {
+      els.selNick.textContent = p.nickname;
+      els.selKdKad.textContent = `${format2(p.kd)} / ${format2(p.kad)}`;
+      els.selKprDprApr.textContent = `${p.kpr.toFixed(2)} / ${p.dpr.toFixed(2)} / ${p.apr.toFixed(2)}`;
+      els.selSvrImpact.textContent = `${p.svr.toFixed(1)}% / ${p.impact.toFixed(2)}`;
+      els.selRating.textContent = p.rating.toFixed(2);
+      els.selKillsDeathsRounds.textContent = `${p.kills} / ${p.deaths} / ${p.rounds}`;
+    }
+
     function openPlayerModal(p) {
+      const flagText = p.country || '👤';
+      els.modalFlag.textContent = flagText;
       els.modalNick.textContent = p.nickname;
-      els.modalSubtitle.textContent = 'Полная статистика игрока в красивой мини-карточке';
-      els.modalCenterName.textContent = p.nickname;
-      els.modalCenterMeta.textContent = `Килы ${p.kills} · Смерти ${p.deaths} · Раунды ${p.rounds}`;
+      els.modalSubtitle.textContent = 'Полная статистика игрока';
+      els.modalLeftStat.textContent = format2(p.kd);
+      els.modalLeftLabel.textContent = 'KD';
+      els.modalRightStat.textContent = format2(p.kad);
+      els.modalRightLabel.textContent = 'KAD';
 
-      els.modalLeftStats.innerHTML = [
-        statCard('Килы', p.kills),
-        statCard('Смерти', p.deaths),
-        statCard('Ассисты', p.assists),
-        statCard('Раунды', p.rounds),
-        statCard('Победы', p.wins),
-        statCard('Поражения', p.losses),
-        statCard('WINRATE', `${p.winrate.toFixed(1)}%`)
-      ].join('');
+      els.modalRating.textContent = p.rating.toFixed(2);
+      els.modalKpr.textContent = p.kpr.toFixed(2);
+      els.modalDpr.textContent = p.dpr.toFixed(2);
+      els.modalApr.textContent = p.apr.toFixed(2);
+      els.modalSvr.textContent = `${p.svr.toFixed(1)}%`;
+      els.modalImpact.textContent = p.impact.toFixed(2);
+      els.modalWinrate.textContent = `${p.winrate.toFixed(1)}%`;
 
-      els.modalRightStats.innerHTML = [
-        statCard('KD', format2(p.kd)),
-        statCard('KAD', format2(p.kad)),
-        statCard('KPR', p.kpr.toFixed(2)),
-        statCard('DPR', p.dpr.toFixed(2)),
-        statCard('APR', p.apr.toFixed(2)),
-        statCard('SVR', `${p.svr.toFixed(1)}%`),
-        statCard('Impact', p.impact.toFixed(2)),
-        statCard('Rating', p.rating.toFixed(2))
-      ].join('');
+      els.modalSummary.innerHTML = `
+        <strong>${escapeHtml(p.nickname)}</strong>:
+        ${p.kills} килов, ${p.deaths} смертей, ${p.assists} ассистов,
+        ${p.rounds} раундов. Rating: <strong>${p.rating.toFixed(2)}</strong>.
+      `;
 
       els.playerModal.classList.add('open');
       els.playerModal.setAttribute('aria-hidden', 'false');
@@ -836,8 +1080,10 @@
       list.forEach(p => {
         const tr = document.createElement('tr');
         if (p.nickname === selectedNickname) tr.classList.add('selected');
+
         const winrateClass = p.winrate >= 60 ? 'good' : p.winrate >= 40 ? 'warn' : 'bad';
         const svrClass = p.svr >= 50 ? 'good' : p.svr >= 25 ? 'warn' : 'bad';
+
         tr.innerHTML = `
           <td><strong>${escapeHtml(p.nickname)}</strong></td>
           <td>${p.kills}</td>
@@ -856,32 +1102,38 @@
           <td>${p.rating.toFixed(2)}</td>
           <td><span class="pill ${winrateClass}">${p.winrate.toFixed(1)}%</span></td>
         `;
+
         tr.addEventListener('click', () => selectPlayer(p.nickname));
         els.tbody.appendChild(tr);
       });
     }
 
     function applySort() {
+      const q = els.searchInput.value.trim().toLowerCase();
+      filtered = players.filter(p => p.nickname.toLowerCase().includes(q));
       const enhanced = getEnhancedPlayers(filtered);
+
       enhanced.sort((a, b) => {
         let av = a[sortKey];
         let bv = b[sortKey];
+
         if (sortKey === 'nickname') {
           av = a.nickname.toLowerCase();
           bv = b.nickname.toLowerCase();
         }
+
         if (typeof av === 'string') {
           return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
         }
+
         return sortDir === 'asc' ? av - bv : bv - av;
       });
+
       render(enhanced);
       updateIndicators();
     }
 
     function applyFilter() {
-      const q = els.searchInput.value.trim().toLowerCase();
-      filtered = players.filter(p => p.nickname.toLowerCase().includes(q));
       applySort();
     }
 
@@ -890,14 +1142,8 @@
       const p = getEnhancedPlayers(players).find(x => x.nickname === nickname);
       if (!p) return;
 
-      els.selNick.textContent = p.nickname;
-      els.selKdKad.textContent = `${format2(p.kd)} / ${format2(p.kad)}`;
-      els.selKprDprApr.textContent = `${p.kpr.toFixed(2)} / ${p.dpr.toFixed(2)} / ${p.apr.toFixed(2)}`;
-      els.selSvrImpact.textContent = `${p.svr.toFixed(1)}% / ${p.impact.toFixed(2)}`;
-      els.selRating.textContent = p.rating.toFixed(2);
-      els.selKillsDeathsRounds.textContent = `${p.kills} / ${p.deaths} / ${p.rounds}`;
+      setSelectedDetails(p);
       els.selectedHint.textContent = 'Выбран игрок из таблицы';
-
       openPlayerModal(p);
       applyFilter();
     }
@@ -907,12 +1153,14 @@
     els.fileInput.addEventListener('change', async () => {
       const file = els.fileInput.files?.[0];
       if (!file) return;
+
       try {
         const text = await file.text();
         const data = JSON.parse(text);
         players = normalize(data);
         selectedNickname = null;
         closePlayerModal();
+
         els.selNick.textContent = '—';
         els.selKdKad.textContent = '—';
         els.selKprDprApr.textContent = '—';
@@ -921,6 +1169,7 @@
         els.selKillsDeathsRounds.textContent = '—';
         els.selectedHint.textContent = 'Кликни по строке таблицы';
         els.searchInput.value = '';
+
         applyFilter();
         alert('Файл успешно загружен.');
       } catch {
