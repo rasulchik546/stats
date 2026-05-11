@@ -295,11 +295,191 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* NEW: modal player card */
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(2, 8, 18, 0.72);
+      backdrop-filter: blur(12px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+      animation: fadeIn .18s ease both;
+    }
+
+    .modal-card {
+      width: min(980px, 100%);
+      max-height: min(82vh, 820px);
+      overflow: auto;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(10, 20, 38, 0.96), rgba(5, 12, 24, 0.96));
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 30px 80px rgba(0,0,0,.55);
+      padding: 20px;
+      position: relative;
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .modal-kicker {
+      font-size: 12px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .modal-head h3 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.1;
+    }
+
+    .modal-sub {
+      margin-top: 8px;
+      color: var(--muted);
+      line-height: 1.4;
+      font-size: 13px;
+    }
+
+    .modal-close {
+      border: 0;
+      cursor: pointer;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.07);
+      color: var(--text);
+      font-size: 26px;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      transition: transform .18s ease, background .18s ease;
+      flex: 0 0 auto;
+    }
+
+    .modal-close:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.12);
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 1fr 220px 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .modal-side {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .stat-card {
+      padding: 14px 15px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      min-height: 72px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .modal-center {
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(74,163,255,0.13), rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.08);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 18px 14px;
+      min-height: 100%;
+    }
+
+    .avatar-ring {
+      width: 116px;
+      height: 116px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 52px;
+      background: radial-gradient(circle at top, rgba(74,163,255,0.34), rgba(255,255,255,0.05));
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: inset 0 0 0 8px rgba(255,255,255,0.03);
+      margin-bottom: 14px;
+    }
+
+    .center-name {
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+
+    .center-meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      max-width: 18ch;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     @media (max-width: 1100px) {
       .hero { grid-template-columns: 1fr; }
       .search-row { grid-template-columns: 1fr; }
       .stats-mini { grid-template-columns: 1fr; }
       .details { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      .modal-body {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-center {
+        min-height: auto;
+        padding: 18px;
+      }
+
+      .avatar-ring {
+        width: 98px;
+        height: 98px;
+        font-size: 44px;
+      }
     }
 
     @media (max-width: 700px) {
@@ -425,6 +605,32 @@
     </section>
   </div>
 
+  <!-- NEW: player modal -->
+  <div class="modal-overlay" id="playerModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalNick">
+      <div class="modal-head">
+        <div>
+          <div class="modal-kicker">Player profile</div>
+          <h3 id="modalNick">—</h3>
+          <div class="modal-sub" id="modalSubtitle">Полная карточка игрока</div>
+        </div>
+        <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Закрыть">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-side" id="modalLeftStats"></div>
+
+        <div class="modal-center">
+          <div class="avatar-ring">👤</div>
+          <div class="center-name" id="modalCenterName">—</div>
+          <div class="center-meta" id="modalCenterMeta">—</div>
+        </div>
+
+        <div class="modal-side" id="modalRightStats"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const els = {
       importBtn: document.getElementById('importBtn'),
@@ -444,7 +650,15 @@
       selSvrImpact: document.getElementById('selSvrImpact'),
       selRating: document.getElementById('selRating'),
       selKillsDeathsRounds: document.getElementById('selKillsDeathsRounds'),
-      selectedHint: document.getElementById('selectedHint')
+      selectedHint: document.getElementById('selectedHint'),
+      playerModal: document.getElementById('playerModal'),
+      modalCloseBtn: document.getElementById('modalCloseBtn'),
+      modalNick: document.getElementById('modalNick'),
+      modalSubtitle: document.getElementById('modalSubtitle'),
+      modalCenterName: document.getElementById('modalCenterName'),
+      modalCenterMeta: document.getElementById('modalCenterMeta'),
+      modalLeftStats: document.getElementById('modalLeftStats'),
+      modalRightStats: document.getElementById('modalRightStats')
     };
 
     const sortIndicators = Object.fromEntries(
@@ -549,6 +763,53 @@
       if (sortIndicators[sortKey]) sortIndicators[sortKey].textContent = sortDir === 'asc' ? '▲' : '▼';
     }
 
+    function statCard(label, value) {
+      return `
+        <div class="stat-card">
+          <div class="stat-label">${escapeHtml(label)}</div>
+          <div class="stat-value">${escapeHtml(value)}</div>
+        </div>
+      `;
+    }
+
+    function openPlayerModal(p) {
+      els.modalNick.textContent = p.nickname;
+      els.modalSubtitle.textContent = 'Полная статистика игрока в красивой мини-карточке';
+      els.modalCenterName.textContent = p.nickname;
+      els.modalCenterMeta.textContent = `Килы ${p.kills} · Смерти ${p.deaths} · Раунды ${p.rounds}`;
+
+      els.modalLeftStats.innerHTML = [
+        statCard('Килы', p.kills),
+        statCard('Смерти', p.deaths),
+        statCard('Ассисты', p.assists),
+        statCard('Раунды', p.rounds),
+        statCard('Победы', p.wins),
+        statCard('Поражения', p.losses),
+        statCard('WINRATE', `${p.winrate.toFixed(1)}%`)
+      ].join('');
+
+      els.modalRightStats.innerHTML = [
+        statCard('KD', format2(p.kd)),
+        statCard('KAD', format2(p.kad)),
+        statCard('KPR', p.kpr.toFixed(2)),
+        statCard('DPR', p.dpr.toFixed(2)),
+        statCard('APR', p.apr.toFixed(2)),
+        statCard('SVR', `${p.svr.toFixed(1)}%`),
+        statCard('Impact', p.impact.toFixed(2)),
+        statCard('Rating', p.rating.toFixed(2))
+      ].join('');
+
+      els.playerModal.classList.add('open');
+      els.playerModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    }
+
+    function closePlayerModal() {
+      els.playerModal.classList.remove('open');
+      els.playerModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+    }
+
     function render(list) {
       els.tbody.innerHTML = '';
 
@@ -628,6 +889,7 @@
       selectedNickname = nickname;
       const p = getEnhancedPlayers(players).find(x => x.nickname === nickname);
       if (!p) return;
+
       els.selNick.textContent = p.nickname;
       els.selKdKad.textContent = `${format2(p.kd)} / ${format2(p.kad)}`;
       els.selKprDprApr.textContent = `${p.kpr.toFixed(2)} / ${p.dpr.toFixed(2)} / ${p.apr.toFixed(2)}`;
@@ -635,6 +897,8 @@
       els.selRating.textContent = p.rating.toFixed(2);
       els.selKillsDeathsRounds.textContent = `${p.kills} / ${p.deaths} / ${p.rounds}`;
       els.selectedHint.textContent = 'Выбран игрок из таблицы';
+
+      openPlayerModal(p);
       applyFilter();
     }
 
@@ -648,6 +912,7 @@
         const data = JSON.parse(text);
         players = normalize(data);
         selectedNickname = null;
+        closePlayerModal();
         els.selNick.textContent = '—';
         els.selKdKad.textContent = '—';
         els.selKprDprApr.textContent = '—';
@@ -669,6 +934,7 @@
       players = [];
       filtered = [];
       selectedNickname = null;
+      closePlayerModal();
       els.searchInput.value = '';
       els.selNick.textContent = '—';
       els.selKdKad.textContent = '—';
@@ -683,6 +949,7 @@
 
     els.searchInput.addEventListener('input', () => {
       selectedNickname = null;
+      closePlayerModal();
       els.selectedHint.textContent = 'Кликни по строке таблицы';
       applyFilter();
     });
@@ -704,6 +971,16 @@
       sortKey = 'kills';
       sortDir = 'desc';
       applySort();
+    });
+
+    els.modalCloseBtn.addEventListener('click', closePlayerModal);
+
+    els.playerModal.addEventListener('click', (e) => {
+      if (e.target === els.playerModal) closePlayerModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closePlayerModal();
     });
 
     updateIndicators();
