@@ -37,8 +37,9 @@
       position: fixed;
       inset: 0;
       pointer-events: none;
-      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
       background-size: 38px 38px;
       mask-image: linear-gradient(to bottom, rgba(0,0,0,0.55), transparent 85%);
       opacity: 0.18;
@@ -271,6 +272,10 @@
     .pill.good { color: #8ff0be; }
     .pill.warn { color: #ffd36b; }
     .pill.bad { color: #ff8fa4; }
+    .pill.soft {
+      color: #d58bff;
+      text-shadow: 0 0 10px rgba(213, 139, 255, 0.75), 0 0 20px rgba(159, 92, 255, 0.45);
+    }
 
     .empty {
       padding: 34px 18px;
@@ -320,7 +325,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* MODAL */
     body.modal-open { overflow: hidden; }
 
     .modal-overlay {
@@ -482,6 +486,7 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease;
     }
 
     .rating-box.center {
@@ -513,6 +518,24 @@
       letter-spacing: .12em;
       margin-bottom: 6px;
       color: #39e06f;
+    }
+
+    .rating-status.lose, .metric-status.lose { color: #ff6b7a; }
+    .rating-status.normal, .metric-status.normal { color: #ffd36b; }
+    .rating-status.good, .metric-status.good { color: #39e06f; }
+    .rating-status.soft, .metric-status.soft {
+      color: #d58bff;
+      text-shadow: 0 0 10px rgba(213, 139, 255, 0.75), 0 0 20px rgba(159, 92, 255, 0.45);
+    }
+
+    .rating-box.soft-glow {
+      border-color: rgba(213, 139, 255, 0.45);
+      box-shadow: 0 0 18px rgba(213, 139, 255, 0.12), inset 0 0 24px rgba(213, 139, 255, 0.06);
+    }
+
+    .rating-box.soft-glow::before {
+      border-color: rgba(213, 139, 255, 0.9);
+      box-shadow: 0 0 20px rgba(213, 139, 255, 0.35);
     }
 
     .rating-value {
@@ -556,6 +579,7 @@
       justify-content: space-between;
       position: relative;
       overflow: hidden;
+      transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease;
     }
 
     .metric-card::after {
@@ -568,6 +592,15 @@
       border-radius: 999px;
       background: linear-gradient(90deg, #39e06f, rgba(57,224,111,0.15));
       opacity: 0.9;
+    }
+
+    .metric-card.soft-glow {
+      border-color: rgba(213, 139, 255, 0.45);
+      box-shadow: 0 0 18px rgba(213, 139, 255, 0.12), inset 0 0 24px rgba(213, 139, 255, 0.06);
+    }
+
+    .metric-card.soft-glow::after {
+      background: linear-gradient(90deg, #d58bff, rgba(213, 139, 255, 0.15));
     }
 
     .metric-value {
@@ -664,7 +697,7 @@
       <section class="panel">
         <div class="title">
           <h1>Stats Viewer</h1>
-          <p>Загрузи JSON-файл, сохранённый на первом сайте, и смотри статистику игроков без возможности редактирования. Поддерживаются поиск, сортировка и метрики: KPR, DPR, APR, SVR, Impact и Rating.</p>
+          <p>Загрузи JSON-файл и смотри статистику игроков без редактирования. Поддерживаются поиск, сортировка и полная карточка игрока.</p>
         </div>
 
         <div class="stats-mini">
@@ -767,13 +800,12 @@
           </thead>
           <tbody id="playersTbody"></tbody>
         </table>
-        <div id="emptyState" class="empty">Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл с первого сайта.</div>
+        <div id="emptyState" class="empty">Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл.</div>
       </div>
       <div class="note">Сайт только для просмотра: добавление, изменение и удаление отключены. Поддерживается импорт массива игроков в JSON-формате.</div>
     </section>
   </div>
 
-  <!-- MODAL -->
   <div class="modal-overlay" id="playerModal" aria-hidden="true">
     <div class="hltv-card" role="dialog" aria-modal="true" aria-labelledby="modalNick">
       <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Закрыть">×</button>
@@ -796,17 +828,19 @@
         <section class="stats-panel">
           <div class="rating-row">
             <div class="rating-box">
+              <div class="rating-status" id="modalLeftStatus">NORMAL</div>
               <div class="rating-value" id="modalLeftStat">—</div>
               <div class="rating-label" id="modalLeftLabel">KD</div>
             </div>
 
-            <div class="rating-box center">
-              <div class="rating-status">GOOD</div>
+            <div class="rating-box center" id="ratingCenterBox">
+              <div class="rating-status" id="modalRatingStatus">GOOD</div>
               <div class="rating-main" id="modalRating">0.00</div>
               <div class="rating-label big">RATING</div>
             </div>
 
             <div class="rating-box">
+              <div class="rating-status" id="modalRightStatus">NORMAL</div>
               <div class="rating-value" id="modalRightStat">—</div>
               <div class="rating-label" id="modalRightLabel">KAD</div>
             </div>
@@ -814,45 +848,43 @@
 
           <div class="metric-grid">
             <div class="metric-card">
+              <div class="metric-status" id="statusKpr">NORMAL</div>
               <div class="metric-value" id="modalKpr">0.00</div>
               <div class="metric-label">KPR</div>
-              <div class="metric-status">GOOD</div>
             </div>
 
             <div class="metric-card">
+              <div class="metric-status" id="statusDpr">NORMAL</div>
               <div class="metric-value" id="modalDpr">0.00</div>
               <div class="metric-label">DPR</div>
-              <div class="metric-status">GOOD</div>
             </div>
 
             <div class="metric-card">
+              <div class="metric-status" id="statusApr">NORMAL</div>
               <div class="metric-value" id="modalApr">0.00</div>
               <div class="metric-label">APR</div>
-              <div class="metric-status">GOOD</div>
             </div>
 
             <div class="metric-card">
+              <div class="metric-status" id="statusSvr">NORMAL</div>
               <div class="metric-value" id="modalSvr">0.0%</div>
               <div class="metric-label">SVR</div>
-              <div class="metric-status">GOOD</div>
             </div>
 
             <div class="metric-card">
+              <div class="metric-status" id="statusImpact">NORMAL</div>
               <div class="metric-value" id="modalImpact">0.00</div>
               <div class="metric-label">IMPACT</div>
-              <div class="metric-status">GOOD</div>
             </div>
 
             <div class="metric-card">
+              <div class="metric-status" id="statusWinrate">NORMAL</div>
               <div class="metric-value" id="modalWinrate">0.0%</div>
               <div class="metric-label">WINRATE</div>
-              <div class="metric-status">GOOD</div>
             </div>
           </div>
 
-          <div class="modal-summary" id="modalSummary">
-            —
-          </div>
+          <div class="modal-summary" id="modalSummary">—</div>
         </section>
       </div>
     </div>
@@ -884,11 +916,23 @@
       modalFlag: document.getElementById('modalFlag'),
       modalNick: document.getElementById('modalNick'),
       modalSubtitle: document.getElementById('modalSubtitle'),
+      modalLeftStatus: document.getElementById('modalLeftStatus'),
       modalLeftStat: document.getElementById('modalLeftStat'),
       modalLeftLabel: document.getElementById('modalLeftLabel'),
+      modalRatingStatus: document.getElementById('modalRatingStatus'),
+      modalRating: document.getElementById('modalRating'),
+      modalRightStatus: document.getElementById('modalRightStatus'),
       modalRightStat: document.getElementById('modalRightStat'),
       modalRightLabel: document.getElementById('modalRightLabel'),
-      modalRating: document.getElementById('modalRating'),
+      ratingCenterBox: document.getElementById('ratingCenterBox'),
+
+      statusKpr: document.getElementById('statusKpr'),
+      statusDpr: document.getElementById('statusDpr'),
+      statusApr: document.getElementById('statusApr'),
+      statusSvr: document.getElementById('statusSvr'),
+      statusImpact: document.getElementById('statusImpact'),
+      statusWinrate: document.getElementById('statusWinrate'),
+
       modalKpr: document.getElementById('modalKpr'),
       modalDpr: document.getElementById('modalDpr'),
       modalApr: document.getElementById('modalApr'),
@@ -904,10 +948,9 @@
     );
 
     let players = [];
-    let filtered = [];
-    let selectedNickname = null;
     let sortKey = 'kills';
     let sortDir = 'desc';
+    let selectedNickname = null;
 
     function toNum(value) {
       const n = Number(value);
@@ -1001,13 +1044,61 @@
       if (sortIndicators[sortKey]) sortIndicators[sortKey].textContent = sortDir === 'asc' ? '▲' : '▼';
     }
 
-    function statCard(label, value) {
-      return `
-        <div class="stat-card">
-          <div class="stat-label">${escapeHtml(label)}</div>
-          <div class="stat-value">${escapeHtml(value)}</div>
-        </div>
-      `;
+    function getStatusByValue(value, type = 'high') {
+      const v = Number(value);
+
+      if (type === 'kd') {
+        if (v <= 0.6) return { text: 'LOSE', cls: 'lose' };
+        if (v <= 1.1) return { text: 'NORMAL', cls: 'normal' };
+        if (v <= 1.4) return { text: 'GOOD', cls: 'good' };
+        return { text: 'SOFT', cls: 'soft' };
+      }
+
+      if (type === 'rating') {
+        if (v <= 0.5) return { text: 'LOSE', cls: 'lose' };
+        if (v <= 1.1) return { text: 'NORMAL', cls: 'normal' };
+        if (v <= 1.6) return { text: 'GOOD', cls: 'good' };
+        return { text: 'SOFT', cls: 'soft' };
+      }
+
+      if (type === 'lower_better') {
+        if (v >= 1.4) return { text: 'LOSE', cls: 'lose' };
+        if (v >= 1.05) return { text: 'NORMAL', cls: 'normal' };
+        if (v >= 0.7) return { text: 'GOOD', cls: 'good' };
+        return { text: 'SOFT', cls: 'soft' };
+      }
+
+      if (type === 'percent') {
+        if (v <= 40) return { text: 'LOSE', cls: 'lose' };
+        if (v <= 55) return { text: 'NORMAL', cls: 'normal' };
+        if (v <= 70) return { text: 'GOOD', cls: 'good' };
+        return { text: 'SOFT', cls: 'soft' };
+      }
+
+      if (v <= 0.6) return { text: 'LOSE', cls: 'lose' };
+      if (v <= 1.1) return { text: 'NORMAL', cls: 'normal' };
+      if (v <= 1.4) return { text: 'GOOD', cls: 'good' };
+      return { text: 'SOFT', cls: 'soft' };
+    }
+
+    function getDprStatus(value) {
+      const v = Number(value);
+
+      if (v >= 1.40) return { text: 'LOSE', cls: 'lose' };
+      if (v >= 1.05) return { text: 'NORMAL', cls: 'normal' };
+      if (v >= 0.70) return { text: 'GOOD', cls: 'good' };
+      return { text: 'SOFT', cls: 'soft' };
+    }
+
+    function removeStatusClasses(el) {
+      if (!el) return;
+      el.classList.remove('lose', 'normal', 'good', 'soft');
+    }
+
+    function applyStatus(el, status) {
+      removeStatusClasses(el);
+      el.classList.add(status.cls);
+      el.textContent = status.text;
     }
 
     function setSelectedDetails(p) {
@@ -1020,22 +1111,58 @@
     }
 
     function openPlayerModal(p) {
-      const flagText = p.country || '👤';
-      els.modalFlag.textContent = flagText;
+      els.modalFlag.textContent = p.country || '👤';
       els.modalNick.textContent = p.nickname;
       els.modalSubtitle.textContent = 'Полная статистика игрока';
+
+      const leftStatus = getStatusByValue(p.kd, 'kd');
+      const rightStatus = getStatusByValue(p.kad, 'high');
+      const ratingStatus = getStatusByValue(p.rating, 'rating');
+
       els.modalLeftStat.textContent = format2(p.kd);
       els.modalLeftLabel.textContent = 'KD';
       els.modalRightStat.textContent = format2(p.kad);
       els.modalRightLabel.textContent = 'KAD';
 
+      applyStatus(els.modalLeftStatus, leftStatus);
+      applyStatus(els.modalRightStatus, rightStatus);
+      applyStatus(els.modalRatingStatus, ratingStatus);
+
       els.modalRating.textContent = p.rating.toFixed(2);
+
+      const kprStatus = getStatusByValue(p.kpr, 'high');
+      const dprStatus = getDprStatus(p.dpr);
+      const aprStatus = getStatusByValue(p.apr, 'high');
+      const svrStatus = getStatusByValue(p.svr, 'percent');
+      const impactStatus = getStatusByValue(p.impact, 'high');
+      const winrateStatus = getStatusByValue(p.winrate, 'percent');
+
+      applyStatus(els.statusKpr, kprStatus);
+      applyStatus(els.statusDpr, dprStatus);
+      applyStatus(els.statusApr, aprStatus);
+      applyStatus(els.statusSvr, svrStatus);
+      applyStatus(els.statusImpact, impactStatus);
+      applyStatus(els.statusWinrate, winrateStatus);
+
       els.modalKpr.textContent = p.kpr.toFixed(2);
       els.modalDpr.textContent = p.dpr.toFixed(2);
       els.modalApr.textContent = p.apr.toFixed(2);
       els.modalSvr.textContent = `${p.svr.toFixed(1)}%`;
       els.modalImpact.textContent = p.impact.toFixed(2);
       els.modalWinrate.textContent = `${p.winrate.toFixed(1)}%`;
+
+      const boxes = document.querySelectorAll('.rating-box, .metric-card');
+      boxes.forEach(box => box.classList.remove('soft-glow'));
+
+      if (leftStatus.cls === 'soft') document.querySelector('.rating-row .rating-box:nth-child(1)')?.classList.add('soft-glow');
+      if (ratingStatus.cls === 'soft') document.querySelector('.rating-row .rating-box:nth-child(2)')?.classList.add('soft-glow');
+      if (rightStatus.cls === 'soft') document.querySelector('.rating-row .rating-box:nth-child(3)')?.classList.add('soft-glow');
+
+      const metricBoxes = document.querySelectorAll('.metric-card');
+      const metricStatuses = [kprStatus, dprStatus, aprStatus, svrStatus, impactStatus, winrateStatus];
+      metricBoxes.forEach((box, i) => {
+        if (metricStatuses[i].cls === 'soft') box.classList.add('soft-glow');
+      });
 
       els.modalSummary.innerHTML = `
         <strong>${escapeHtml(p.nickname)}</strong>:
@@ -1059,7 +1186,7 @@
 
       if (!players.length) {
         els.empty.style.display = 'block';
-        els.empty.textContent = 'Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл с первого сайта.';
+        els.empty.textContent = 'Пока ничего не загружено. Нажми «Загрузить JSON» и выбери файл.';
       } else if (!list.length) {
         els.empty.style.display = 'block';
         els.empty.textContent = 'Ничего не найдено по этому запросу.';
@@ -1081,8 +1208,8 @@
         const tr = document.createElement('tr');
         if (p.nickname === selectedNickname) tr.classList.add('selected');
 
-        const winrateClass = p.winrate >= 60 ? 'good' : p.winrate >= 40 ? 'warn' : 'bad';
-        const svrClass = p.svr >= 50 ? 'good' : p.svr >= 25 ? 'warn' : 'bad';
+        const winrateClass = p.winrate >= 70 ? 'soft' : p.winrate >= 60 ? 'good' : p.winrate >= 45 ? 'normal' : 'bad';
+        const svrClass = p.svr >= 75 ? 'soft' : p.svr >= 60 ? 'good' : p.svr >= 40 ? 'normal' : 'bad';
 
         tr.innerHTML = `
           <td><strong>${escapeHtml(p.nickname)}</strong></td>
@@ -1110,7 +1237,7 @@
 
     function applySort() {
       const q = els.searchInput.value.trim().toLowerCase();
-      filtered = players.filter(p => p.nickname.toLowerCase().includes(q));
+      const filtered = players.filter(p => p.nickname.toLowerCase().includes(q));
       const enhanced = getEnhancedPlayers(filtered);
 
       enhanced.sort((a, b) => {
@@ -1181,7 +1308,6 @@
 
     els.clearBtn.addEventListener('click', () => {
       players = [];
-      filtered = [];
       selectedNickname = null;
       closePlayerModal();
       els.searchInput.value = '';
